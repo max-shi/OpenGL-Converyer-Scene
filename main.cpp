@@ -14,7 +14,8 @@
 using namespace std;
 
 //-- Globals ---------------------------------------------------------------
-GLuint floorTex;    // Texture ID for the floor
+// Texture for floor
+GLuint floorTex;
 
 // Conveyor belt globals
 float beltOffset = 0.0f;     // Current position along the belt
@@ -22,26 +23,69 @@ float beltSpeed  = 0.1f;      // Speed of belt movement (units per update)
 float beltLength = 30.0f;     // Total length of the conveyor belt
 float beltWidth  = 5.0f;
 
-// Camera globals for first-person movement
+// Camera globals for smooth first-person movement
 float camPosX = 0.0f, camPosY = 4.0f, camPosZ = 10.0f;
 float camYaw   = 0.0f;        // Yaw in degrees; 0 means looking along -Z
 float camPitch = 0.0f;        // Pitch in degrees; 0 means horizontal view
-const float moveSpeed = 0.5f; // Movement speed
+const float moveSpeed = 0.2f; // Movement speed per update
+const float rotSpeed  = 1.6f;  // Rotation speed (degrees per update)
 
-//------------------- Conveyor Belt Update -------------------------
-void updateBelt(int value) {
+// Key state arrays for smooth continuous movement
+bool keyStates[256] = { false };
+bool specialKeyStates[256] = { false };
+
+
+//------------------- Update Scene (Belt & Camera) -------------------------
+void updateScene(int value) {
+    // Update conveyor belt offset
     beltOffset += beltSpeed;
     if (beltOffset > beltLength)
         beltOffset = fmod(beltOffset, beltLength); // loop back
 
+    // Update camera movement based on currently pressed keys
+    float radYaw = camYaw * M_PI / 180.0f;
+
+    if (keyStates['w'] || keyStates['W']) {
+       camPosX += moveSpeed * sin(radYaw);
+       camPosZ += -moveSpeed * cos(radYaw);
+    }
+    if (keyStates['s'] || keyStates['S']) {
+       camPosX -= moveSpeed * sin(radYaw);
+       camPosZ -= -moveSpeed * cos(radYaw);
+    }
+    if (keyStates['a'] || keyStates['A']) {
+       // Strafe left (perpendicular to the look direction)
+       camPosX -= moveSpeed * cos(radYaw);
+       camPosZ -= moveSpeed * sin(radYaw);
+    }
+    if (keyStates['d'] || keyStates['D']) {
+       // Strafe right
+       camPosX += moveSpeed * cos(radYaw);
+       camPosZ += moveSpeed * sin(radYaw);
+    }
+
+    // Update camera rotation using arrow keys
+    if (specialKeyStates[GLUT_KEY_LEFT])
+       camYaw -= rotSpeed;
+    if (specialKeyStates[GLUT_KEY_RIGHT])
+       camYaw += rotSpeed;
+    if (specialKeyStates[GLUT_KEY_UP]) {
+       camPitch += rotSpeed;
+       if (camPitch > 89.0f) camPitch = 89.0f;
+    }
+    if (specialKeyStates[GLUT_KEY_DOWN]) {
+       camPitch -= rotSpeed;
+       if (camPitch < -89.0f) camPitch = -89.0f;
+    }
+
     glutPostRedisplay();
-    glutTimerFunc(16, updateBelt, 0);
+    glutTimerFunc(16, updateScene, 0); // roughly 60 FPS
 }
+
 
 //------------------- Draw Conveyor Belt ---------------------------
 void drawConveyorBelt() {
-    // Gray color for belt surface
-    glColor3f(0.3f, 0.3f, 0.3f);
+    glColor3f(0.3f, 0.3f, 0.3f); // Gray color for belt surface
     glBegin(GL_QUADS);
         glVertex3f(-beltWidth/2, 2.0f, 0.0f);
         glVertex3f(-beltWidth/2, 2.0f, beltLength);
@@ -64,7 +108,7 @@ void drawItem(float zPos) {
 void loadTextures() {
     glGenTextures(1, &floorTex);              // Generate a texture ID
     glBindTexture(GL_TEXTURE_2D, floorTex);    // Bind the texture for use
-    loadTGA("concrete.tga");                  // Load the TGA file (ensure it’s in the proper path)
+    loadTGA("concrete.tga");                  // Load the TGA file (ensure it's in the proper path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -111,7 +155,7 @@ void display() {
 
     glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 
-    // Draw the scene: floor, conveyor belt, and moving items
+    // Draw scene objects
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
     glEnable(GL_LIGHTING);
@@ -126,56 +170,28 @@ void display() {
     glutSwapBuffers();
 }
 
-//------------------- Normal Keyboard Callback ---------------------------
-void keyboard(unsigned char key, int x, int y) {
-    float radYaw = camYaw * M_PI / 180.0f;
-    switch(key) {
-        case 'w': case 'W':
-            // Move forward along the horizontal projection of the look direction
-            camPosX += moveSpeed * sin(radYaw);
-            camPosZ += -moveSpeed * cos(radYaw);
-            break;
-        case 's': case 'S':
-            // Move backward
-            camPosX -= moveSpeed * sin(radYaw);
-            camPosZ -= -moveSpeed * cos(radYaw);
-            break;
-        case 'a': case 'A':
-            // Strafe left (perpendicular to the look direction)
-            camPosX -= moveSpeed * cos(radYaw);
-            camPosZ -= moveSpeed * sin(radYaw);
-            break;
-        case 'd': case 'D':
-            // Strafe right
-            camPosX += moveSpeed * cos(radYaw);
-            camPosZ += moveSpeed * sin(radYaw);
-            break;
-        case 27: // Escape key
-            exit(0);
-            break;
-    }
-    glutPostRedisplay();
+
+//------------------- Keyboard Callbacks ---------------------------
+// When a key is pressed, record its state as true.
+void keyboardDown(unsigned char key, int x, int y) {
+    keyStates[key] = true;
+    if (key == 27) // Escape key
+        exit(0);
 }
 
-//------------------- Special Key Callback (Arrow Keys) ---------------------------
-void specialKeys(int key, int x, int y) {
-    switch(key) {
-        case GLUT_KEY_LEFT:
-            camYaw -= 2.0f;  // Rotate view left
-            break;
-        case GLUT_KEY_RIGHT:
-            camYaw += 2.0f;  // Rotate view right
-            break;
-        case GLUT_KEY_UP:
-            camPitch += 2.0f;  // Tilt view upward
-            if (camPitch > 89.0f) camPitch = 89.0f; // Limit pitch
-            break;
-        case GLUT_KEY_DOWN:
-            camPitch -= 2.0f;  // Tilt view downward
-            if (camPitch < -89.0f) camPitch = -89.0f;
-            break;
-    }
-    glutPostRedisplay();
+// When a key is released, record its state as false.
+void keyboardUp(unsigned char key, int x, int y) {
+    keyStates[key] = false;
+}
+
+// For special keys (arrow keys), record state on press.
+void specialKeyDown(int key, int x, int y) {
+    specialKeyStates[key] = true;
+}
+
+// And record when special keys are released.
+void specialKeyUp(int key, int x, int y) {
+    specialKeyStates[key] = false;
 }
 
 //------------------- OpenGL Initialization ---------------------------
@@ -198,16 +214,18 @@ void initialize() {
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(1000, 1000);
     glutInitWindowPosition(10, 10);
-    glutCreateWindow("Conveyor Belt with Camera");
+    glutCreateWindow("Conveyor Belt with Smooth Camera");
 
     initialize();
 
     glutDisplayFunc(display);
-    glutKeyboardFunc(keyboard);
-    glutSpecialFunc(specialKeys);
-    glutTimerFunc(16, updateBelt, 0);
+    glutKeyboardFunc(keyboardDown);
+    glutKeyboardUpFunc(keyboardUp);
+    glutSpecialFunc(specialKeyDown);
+    glutSpecialUpFunc(specialKeyUp);
+    glutTimerFunc(16, updateScene, 0);
 
     glutMainLoop();
     return 0;
