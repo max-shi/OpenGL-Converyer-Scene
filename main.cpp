@@ -26,18 +26,23 @@ const float beltZMin = -5.0f;     // Belt z-start
 const float beltZMax = -3.0f;     // Belt z-end
 const float beltWidth = beltZMax - beltZMin;  // Width of the belt (z-axis)
 const float beltThickness = 0.1f; // Thickness of the belt material
-const float rollerRadius = 0.3f;  // Radius of the end rollers
-float rollerRotation = 0.0f;      // Current rotation angle of rollers
+const float rollerRadius = 0.3f;  // Radius of the rollers
+float rollerRotation = 0.0f;      // Current rotation angle of rollers (in degrees)
 
 // Global instance of KeyboardUtilities.
 KeyboardUtilities keyboardUtil;
 
-//------------------- Update Scene (Belt & Camera) -------------------------
+//------------------- Update Scene (Belt, Rollers & Camera) -------------------------
 void updateScene(int value) {
     // Update conveyor belt offset along the x-axis.
     beltOffset += beltSpeed;
     if (beltOffset > beltXLength)
         beltOffset = fmod(beltOffset, beltXLength); // Loop back.
+
+    // Update roller rotation angle.
+    // The relationship is: angular displacement = linear displacement / radius (in radians)
+    // Converting to degrees: angle = beltSpeed * (180/(π*rollerRadius))
+    rollerRotation += beltSpeed * 180.0f / (M_PI * rollerRadius);
 
     // Update camera movement
     keyboardUtil.update();
@@ -46,17 +51,65 @@ void updateScene(int value) {
     glutTimerFunc(16, updateScene, 0); // Roughly 60 FPS.
 }
 
+//------------------- Draw an Individual Roller ---------------------------
+// Draws a roller positioned at xPos along the belt.
+// In our coordinate system, the belt runs along x, the floor is in the x-z plane (y is vertical).
+// To match the problem statement (with rollers’ axis along the belt width),
+// we draw the roller as a cylinder with its axis along z (i.e. its circular faces are in the x-y plane).
+void drawRoller(float xPos) {
+    float rollerLength = beltWidth;  // Set roller length equal to the belt's width.
+    // Determine the center of the roller.
+    // Here we choose the roller to be centered vertically at y = 2.1 (the belt's base height)
+    // and in depth at the midpoint of the belt (i.e. (beltZMin + beltZMax)/2).
+    float yCenter = 2.1f;
+    float zCenter = (beltZMin + beltZMax) / 2.0f;
+
+    glPushMatrix();
+        // Position the roller at the appropriate x, y, and z.
+        glTranslatef(xPos, yCenter, zCenter);
+        // To center the cylinder along its axis (which is along z by default),
+        // translate backward by half its length.
+        glTranslatef(0.0f, 0.0f, -rollerLength / 2.0f);
+        // Apply rotation about the roller’s axis (z-axis) to simulate spinning.
+        glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
+
+        // Bind the metal texture (or simply use a color) for the roller.
+        glBindTexture(GL_TEXTURE_2D, metalTex);
+        glEnable(GL_TEXTURE_2D);
+        glColor3f(0.7f, 0.7f, 0.7f);
+
+        // Create a quadric object for drawing the cylinder.
+        GLUquadric* quadric = gluNewQuadric();
+        gluQuadricTexture(quadric, GL_TRUE);
+        gluQuadricNormals(quadric, GLU_SMOOTH);
+        // Draw the cylindrical part of the roller.
+        gluCylinder(quadric, rollerRadius, rollerRadius, rollerLength, 32, 4);
+        gluDeleteQuadric(quadric);
+        glDisable(GL_TEXTURE_2D);
+    glPopMatrix();
+}
+
+//------------------- Draw Both Rollers ---------------------------
+void drawRollers() {
+    int numRollers = 40;
+    float spacing = beltXLength / (numRollers - 1); // beltXLength is 40.0f (from -20 to 20)
+    for (int i = 0; i < numRollers; i++) {
+        float xPos = -20.0f + i * spacing;
+        drawRoller(xPos);
+    }
+}
+
 //------------------- Draw Conveyor Belt ---------------------------
 void drawConveyorBelt() {
     float xLeft = -20.0f, xRight = 20.0f;
     float yBase = 2.1f;
-    float normalizedOffset = beltOffset/7.5;
+    float normalizedOffset = beltOffset / 7.5f;
     // Enable texture for belt
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, beltTex);
 
     // Draw the top moving surface of belt (with texture animation)
-    glColor3f(0.7f, 0.7f, 0.7f); // Almost black for rubber belt
+    glColor3f(0.9f, 0.9f, 0.9f); // Almost black for rubber belt
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f - normalizedOffset, 0.0f); glVertex3f(xLeft, yBase + rollerRadius, beltZMin);
         glTexCoord2f(0.0f - normalizedOffset, 1.0f); glVertex3f(xLeft, yBase + rollerRadius, beltZMax);
@@ -89,9 +142,7 @@ void drawConveyorBelt() {
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_2D);
 }
-
 
 //------------------- Draw Processed Item ---------------------------
 void drawProcessedItem(float offset) {
@@ -349,8 +400,12 @@ void display() {
     drawTexturedFloor();
     glEnable(GL_LIGHTING);
 
-    // Draw the enhanced conveyor system
+    // Draw the support structure and rollers.
     drawSupportStructure();
+    // Draw rollers so that the belt appears to wrap around them.
+    drawRollers();
+
+    // Draw the conveyor belt.
     drawConveyorBelt();
 
     // Draw items on the conveyor, spaced evenly.
