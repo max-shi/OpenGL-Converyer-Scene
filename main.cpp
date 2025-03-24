@@ -55,18 +55,15 @@ void drawCylinder(float radius, float length, int segments) {
     gluQuadricNormals(quadric, GLU_SMOOTH);
     gluQuadricTexture(quadric, GL_TRUE);
 
-    glPushMatrix();
-        // Rotate to align with X-axis
-        glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-        // Draw cylindrical body
-        gluCylinder(quadric, radius, radius, length, segments, 1);
+    // No rotation here - we'll handle orientation in the calling function
+    // Draw cylindrical body along Z axis by default
+    gluCylinder(quadric, radius, radius, length, segments, 1);
 
-        // Draw end caps
-        glPushMatrix();
-            gluDisk(quadric, 0.0f, radius, segments, 1);
-            glTranslatef(0.0f, 0.0f, length);
-            gluDisk(quadric, 0.0f, radius, segments, 1);
-        glPopMatrix();
+    // Draw end caps
+    gluDisk(quadric, 0.0f, radius, segments, 1);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, length);
+    gluDisk(quadric, 0.0f, radius, segments, 1);
     glPopMatrix();
 
     gluDeleteQuadric(quadric);
@@ -103,23 +100,48 @@ void drawBeltSurface() {
         glTexCoord2f(0.0f + texOffset, 1.0f); glVertex3f(beltLeft, 2.1f - rollerRadius, beltZMax);
     glEnd();
 
-    // Side edges of belt (thin thickness)
-    // Front edge
+    // Left edge of belt
     glBegin(GL_QUADS);
-        glNormal3f(0.0f, 0.0f, 1.0f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(beltLeft, 2.1f - rollerRadius, beltZMax);
-        glTexCoord2f(5.0f, 0.0f); glVertex3f(beltRight, 2.1f - rollerRadius, beltZMax);
-        glTexCoord2f(5.0f, 0.1f); glVertex3f(beltRight, 2.1f + rollerRadius, beltZMax);
-        glTexCoord2f(0.0f, 0.1f); glVertex3f(beltLeft, 2.1f + rollerRadius, beltZMax);
+        glNormal3f(-1.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(beltLeft, 2.1f - rollerRadius, beltZMin);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(beltLeft, 2.1f - rollerRadius, beltZMax);
+        glTexCoord2f(1.0f, 0.1f); glVertex3f(beltLeft, 2.1f + rollerRadius, beltZMax);
+        glTexCoord2f(0.0f, 0.1f); glVertex3f(beltLeft, 2.1f + rollerRadius, beltZMin);
     glEnd();
 
-    // Back edge
+    // Right edge of belt
     glBegin(GL_QUADS);
+        glNormal3f(1.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(beltRight, 2.1f - rollerRadius, beltZMax);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(beltRight, 2.1f - rollerRadius, beltZMin);
+        glTexCoord2f(1.0f, 0.1f); glVertex3f(beltRight, 2.1f + rollerRadius, beltZMin);
+        glTexCoord2f(0.0f, 0.1f); glVertex3f(beltRight, 2.1f + rollerRadius, beltZMax);
+    glEnd();
+
+    // Front curved section around roller
+    glBegin(GL_QUAD_STRIP);
+        glNormal3f(0.0f, 0.0f, 1.0f);
+        for (int i = 0; i <= 8; i++) {
+            float angle = M_PI * i / 8.0f;
+            float y = 2.1f + rollerRadius * cos(angle);
+            float z = beltZMax + rollerRadius * sin(angle);
+
+            glTexCoord2f(0.0f + texOffset, (float)i/8.0f); glVertex3f(beltLeft, y, z);
+            glTexCoord2f(5.0f + texOffset, (float)i/8.0f); glVertex3f(beltRight, y, z);
+        }
+    glEnd();
+
+    // Back curved section around roller
+    glBegin(GL_QUAD_STRIP);
         glNormal3f(0.0f, 0.0f, -1.0f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(beltRight, 2.1f - rollerRadius, beltZMin);
-        glTexCoord2f(5.0f, 0.0f); glVertex3f(beltLeft, 2.1f - rollerRadius, beltZMin);
-        glTexCoord2f(5.0f, 0.1f); glVertex3f(beltLeft, 2.1f + rollerRadius, beltZMin);
-        glTexCoord2f(0.0f, 0.1f); glVertex3f(beltRight, 2.1f + rollerRadius, beltZMin);
+        for (int i = 0; i <= 8; i++) {
+            float angle = M_PI * i / 8.0f;
+            float y = 2.1f + rollerRadius * cos(angle);
+            float z = beltZMin - rollerRadius * sin(angle);
+
+            glTexCoord2f(5.0f + texOffset, (float)i/8.0f); glVertex3f(beltRight, y, z);
+            glTexCoord2f(0.0f + texOffset, (float)i/8.0f); glVertex3f(beltLeft, y, z);
+        }
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -134,36 +156,42 @@ void drawRollers() {
     glColor3f(0.7f, 0.7f, 0.7f); // Metallic gray color
 
     // Calculate roller positions
-    float leftRollerPos = -20.0f;
-    float rightRollerPos = 20.0f;
+    float frontRollerPos = beltZMax;
+    float backRollerPos = beltZMin;
     float rollerHeight = 2.1f;
-    float rollerLength = beltWidth + 0.4f; // Slightly wider than the belt
+    float rollerLength = beltXLength + 0.4f; // Slightly wider than the belt
 
-    // Left end roller
+    // Front end roller (perpendicular to belt direction)
     glPushMatrix();
-        glTranslatef(leftRollerPos, rollerHeight, (beltZMin + beltZMax) / 2.0f);
+        glTranslatef(0.0f, rollerHeight, frontRollerPos);
+        // Rotate to align with X-axis (perpendicular to belt movement direction)
+        glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
         // Rotate the roller based on belt movement
         glRotatef(fmod(beltOffset * 360.0f / (2.0f * M_PI * rollerRadius), 360.0f), 0.0f, 0.0f, 1.0f);
         drawCylinder(rollerRadius, rollerLength, rollerSegments);
     glPopMatrix();
 
-    // Right end roller
+    // Back end roller (perpendicular to belt direction)
     glPushMatrix();
-        glTranslatef(rightRollerPos, rollerHeight, (beltZMin + beltZMax) / 2.0f);
-        // Rotate the roller based on belt movement (opposite direction)
+        glTranslatef(0.0f, rollerHeight, backRollerPos);
+        // Rotate to align with X-axis (perpendicular to belt movement direction)
+        glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+        // Rotate the roller based on belt movement
         glRotatef(fmod(beltOffset * 360.0f / (2.0f * M_PI * rollerRadius), 360.0f), 0.0f, 0.0f, 1.0f);
         drawCylinder(rollerRadius, rollerLength, rollerSegments);
     glPopMatrix();
 
     // Add idler rollers underneath (supporting the bottom portion of belt)
     int numIdlers = 6;
-    float idlerSpacing = beltXLength / (numIdlers + 1);
+    float idlerSpacing = (frontRollerPos - backRollerPos) / (numIdlers + 1);
     float idlerRadius = rollerRadius / 2.0f;
 
     for (int i = 1; i <= numIdlers; i++) {
-        float idlerPos = leftRollerPos + i * idlerSpacing;
+        float idlerPos = backRollerPos + i * idlerSpacing;
         glPushMatrix();
-            glTranslatef(idlerPos, rollerHeight - rollerRadius - idlerRadius, (beltZMin + beltZMax) / 2.0f);
+            glTranslatef(0.0f, rollerHeight - rollerRadius - idlerRadius, idlerPos);
+            // Rotate to align with X-axis (perpendicular to belt direction)
+            glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
             // Rotate the idler based on belt movement
             glRotatef(fmod(-beltOffset * 360.0f / (2.0f * M_PI * idlerRadius), 360.0f), 0.0f, 0.0f, 1.0f);
             drawCylinder(idlerRadius, rollerLength * 0.8f, rollerSegments);
@@ -188,21 +216,21 @@ void drawConveyorSupport() {
     for (float x : {-19.5f, -10.0f, 0.0f, 10.0f, 19.5f}) {
         // Front leg
         glPushMatrix();
-            glTranslatef(x, supportHeight/2.0f, beltZMax - 0.2f);
+            glTranslatef(x, supportHeight/2.0f, beltZMax + 0.2f);
             glScalef(legWidth, supportHeight, legWidth);
             glutSolidCube(1.0);
         glPopMatrix();
 
         // Back leg
         glPushMatrix();
-            glTranslatef(x, supportHeight/2.0f, beltZMin + 0.2f);
+            glTranslatef(x, supportHeight/2.0f, beltZMin - 0.2f);
             glScalef(legWidth, supportHeight, legWidth);
             glutSolidCube(1.0);
         glPopMatrix();
     }
 
-    // Horizontal supports connecting legs
-    for (float z : {beltZMin + 0.2f, beltZMax - 0.2f}) {
+    // Horizontal supports connecting legs along x-axis
+    for (float z : {beltZMin - 0.2f, beltZMax + 0.2f}) {
         // Lower horizontal support
         glPushMatrix();
             glTranslatef(0.0f, 0.6f, z);
@@ -218,52 +246,76 @@ void drawConveyorSupport() {
         glPopMatrix();
     }
 
-    // Cross braces for stability
+    // Horizontal supports along z-axis
+    for (float x : {-19.5f, 19.5f}) {
+        // Lower horizontal support
+        glPushMatrix();
+            glTranslatef(x, 0.6f, (beltZMin + beltZMax) / 2.0f);
+            glScalef(legWidth, legWidth, beltWidth + 0.4f);
+            glutSolidCube(1.0);
+        glPopMatrix();
+
+        // Upper horizontal support
+        glPushMatrix();
+            glTranslatef(x, 1.8f, (beltZMin + beltZMax) / 2.0f);
+            glScalef(legWidth, legWidth, beltWidth + 0.4f);
+            glutSolidCube(1.0);
+        glPopMatrix();
+    }
+
+    // Cross braces for stability along x-axis
     for (float xStart : {-19.5f, -10.0f, 0.0f, 10.0f}) {
         float xEnd = xStart + 9.5f;
 
         // Front cross brace
         glBegin(GL_QUADS);
-            glVertex3f(xStart, 0.6f + legWidth/2.0f, beltZMax - 0.2f);
-            glVertex3f(xEnd, 1.8f - legWidth/2.0f, beltZMax - 0.2f);
-            glVertex3f(xEnd, 1.8f + legWidth/2.0f, beltZMax - 0.2f);
-            glVertex3f(xStart, 0.6f - legWidth/2.0f, beltZMax - 0.2f);
+            glVertex3f(xStart, 0.6f + legWidth/2.0f, beltZMax + 0.2f);
+            glVertex3f(xEnd, 1.8f - legWidth/2.0f, beltZMax + 0.2f);
+            glVertex3f(xEnd, 1.8f + legWidth/2.0f, beltZMax + 0.2f);
+            glVertex3f(xStart, 0.6f - legWidth/2.0f, beltZMax + 0.2f);
         glEnd();
 
         // Back cross brace
         glBegin(GL_QUADS);
-            glVertex3f(xStart, 0.6f + legWidth/2.0f, beltZMin + 0.2f);
-            glVertex3f(xEnd, 1.8f - legWidth/2.0f, beltZMin + 0.2f);
-            glVertex3f(xEnd, 1.8f + legWidth/2.0f, beltZMin + 0.2f);
-            glVertex3f(xStart, 0.6f - legWidth/2.0f, beltZMin + 0.2f);
+            glVertex3f(xStart, 0.6f + legWidth/2.0f, beltZMin - 0.2f);
+            glVertex3f(xEnd, 1.8f - legWidth/2.0f, beltZMin - 0.2f);
+            glVertex3f(xEnd, 1.8f + legWidth/2.0f, beltZMin - 0.2f);
+            glVertex3f(xStart, 0.6f - legWidth/2.0f, beltZMin - 0.2f);
         glEnd();
     }
 
-    // Motor housing at one end (right side)
+    // Motor housing at one end (right side of X axis, side of the conveyor)
     glColor3f(0.3f, 0.3f, 0.3f); // Darker color for motor
     glPushMatrix();
-        glTranslatef(20.5f, 2.1f, (beltZMin + beltZMax) / 2.0f);
+        glTranslatef(21.0f, 2.1f, (beltZMin + beltZMax) / 2.0f);
         glScalef(1.0f, 1.2f, 1.3f);
         glutSolidCube(1.0);
+    glPopMatrix();
+
+    // Drive shaft from motor to belt roller
+    glPushMatrix();
+        glTranslatef(20.2f, 2.1f, (beltZMin + beltZMax) / 2.0f);
+        glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
+        drawCylinder(0.15f, 0.8f, 12);
     glPopMatrix();
 
     // Bearing housings at roller endpoints
     glColor3f(0.6f, 0.6f, 0.6f);
 
-    // Left roller bearings
-    for (float z : {beltZMin - 0.2f, beltZMax + 0.2f}) {
+    // Front roller bearings
+    for (float x : {-20.2f, 20.2f}) {
         glPushMatrix();
-            glTranslatef(-20.0f, 2.1f, z);
-            glScalef(0.3f, 0.7f, 0.3f);
+            glTranslatef(x, 2.1f, beltZMax);
+            glScalef(0.5f, 0.7f, 0.3f);
             glutSolidCube(1.0);
         glPopMatrix();
     }
 
-    // Right roller bearings
-    for (float z : {beltZMin - 0.2f, beltZMax + 0.2f}) {
+    // Back roller bearings
+    for (float x : {-20.2f, 20.2f}) {
         glPushMatrix();
-            glTranslatef(20.0f, 2.1f, z);
-            glScalef(0.3f, 0.7f, 0.3f);
+            glTranslatef(x, 2.1f, beltZMin);
+            glScalef(0.5f, 0.7f, 0.3f);
             glutSolidCube(1.0);
         glPopMatrix();
     }
@@ -272,7 +324,7 @@ void drawConveyorSupport() {
     glColor3f(0.4f, 0.4f, 0.45f);
     glPushMatrix();
         glTranslatef(0.0f, baseHeight/2.0f, (beltZMin + beltZMax) / 2.0f);
-        glScalef(40.0f, baseHeight, beltWidth + 1.0f);
+        glScalef(40.0f, baseHeight, beltWidth + 1.5f);
         glutSolidCube(1.0);
     glPopMatrix();
 
