@@ -57,37 +57,48 @@ void updateScene(int value) {
 // To match the problem statement (with rollers’ axis along the belt width),
 // we draw the roller as a cylinder with its axis along z (i.e. its circular faces are in the x-y plane).
 void drawRoller(float xPos) {
-    float rollerLength = beltWidth;  // Set roller length equal to the belt's width.
-    // Determine the center of the roller.
-    // Here we choose the roller to be centered vertically at y = 2.1 (the belt's base height)
-    // and in depth at the midpoint of the belt (i.e. (beltZMin + beltZMax)/2).
-    float yCenter = 2.1f;
-    float zCenter = (beltZMin + beltZMax) / 2.0f;
+    float rollerLength = beltWidth;  // Roller length equals belt's width.
+    float yCenter = 2.1f;           // Height at which rollers sit
+    float zCenter = (beltZMin + beltZMax) / 2.0f;  // Center of the belt in z
 
     glPushMatrix();
-        // Position the roller at the appropriate x, y, and z.
-        glTranslatef(xPos, yCenter, zCenter);
-        // To center the cylinder along its axis (which is along z by default),
-        // translate backward by half its length.
-        glTranslatef(0.0f, 0.0f, -rollerLength / 2.0f);
-        // Apply rotation about the roller’s axis (z-axis) to simulate spinning.
-        glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
+    // Position the roller at the appropriate x, y, and z
+    glTranslatef(xPos, yCenter, zCenter);
 
-        // Bind the metal texture (or simply use a color) for the roller.
-        glBindTexture(GL_TEXTURE_2D, metalTex);
-        glEnable(GL_TEXTURE_2D);
-        glColor3f(0.7f, 0.7f, 0.7f);
+    // Shift so the cylinder extends from z=0 to z=rollerLength in local coords
+    glTranslatef(0.0f, 0.0f, -rollerLength / 2.0f);
 
-        // Create a quadric object for drawing the cylinder.
-        GLUquadric* quadric = gluNewQuadric();
-        gluQuadricTexture(quadric, GL_TRUE);
-        gluQuadricNormals(quadric, GLU_SMOOTH);
-        // Draw the cylindrical part of the roller.
-        gluCylinder(quadric, rollerRadius, rollerRadius, rollerLength, 32, 4);
-        gluDeleteQuadric(quadric);
-        glDisable(GL_TEXTURE_2D);
+    // Apply rotation about the roller’s axis (z-axis) for spinning
+    glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
+
+    // Bind the metal texture (or simply use a color) for the roller.
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(0.7f, 0.7f, 0.7f);
+
+    // Create a quadric object for drawing the cylinder.
+    GLUquadric* quad = gluNewQuadric();
+    gluQuadricTexture(quad, GL_TRUE);
+    gluQuadricNormals(quad, GLU_SMOOTH);
+
+    // 1) Draw the cylindrical surface, from z=0 to z=rollerLength
+    gluCylinder(quad, rollerRadius, rollerRadius, rollerLength, 32, 4);
+
+    // 2) Draw the top disk (at z=rollerLength)
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, rollerLength);
+    gluDisk(quad, 0.0f, rollerRadius, 32, 1);
+    glPopMatrix();
+    glPushMatrix();
+    glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
+    gluDisk(quad, 0.0f, rollerRadius, 32, 1);
+    glPopMatrix();
+
+    gluDeleteQuadric(quad);
+    glDisable(GL_TEXTURE_2D);
     glPopMatrix();
 }
+
 
 //------------------- Draw Both Rollers ---------------------------
 void drawRollers() {
