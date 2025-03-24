@@ -20,7 +20,7 @@ GLuint metalTex;
 
 // Conveyor belt globals (oriented along x-axis).
 float beltOffset = 0.0f;          // Current offset along the belt (x-axis)
-float beltSpeed = 0.025f;         // Speed of belt movement (units per update)
+float beltSpeed = 1.f / 60.f;         // Speed of belt movement (units per update)
 float beltXLength = 40.0f;        // Belt spans from x = -20 to x = +20
 const float beltZMin = -5.0f;     // Belt z-start
 const float beltZMax = -3.0f;     // Belt z-end
@@ -333,6 +333,94 @@ void drawSupportStructure() {
     glDisable(GL_TEXTURE_2D);
 }
 
+//------------------- Draw Press Device ---------------------------
+void drawPressDevice() {
+    // Press device parameters
+    float baseX = 0.0f;              // X position centered at origin
+    float baseZ = -6.f;             // Z position behind conveyor belt
+    float baseY = 0.0f;              // Base at floor level
+    float baseWidth = 2.0f;          // Width of base
+    float baseDepth = 2.0f;          // Depth of base
+    float baseHeight = 7.f;         // Height of vertical support
+    float armLength = 3.0f;          // Length of horizontal arm
+    float pistonRadius = 0.4f;       // Radius of piston
+    float headSize = 0.8f;           // Size of press head
+
+    float pressCycle = fmod(beltOffset * (2.0f * M_PI / 5.0f), 2.0f * M_PI);
+    float pressPosition = 0.5f * sin(pressCycle + 0.6);
+
+    // Use metal texture for press device
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(0.6f, 0.6f, 0.6f);  // Slightly lighter gray than support structure
+
+    // Draw base of press
+    glPushMatrix();
+        glTranslatef(baseX, baseY + baseHeight/2, baseZ);
+        glScalef(baseWidth, baseHeight, baseDepth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw horizontal arm extending from the top of the base toward conveyor
+    glPushMatrix();
+        glTranslatef(baseX, baseY + baseHeight, baseZ + armLength/2);
+        glScalef(baseWidth/1.5f, baseWidth/1.5f, armLength);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw vertical piston housing at end of arm
+    glPushMatrix();
+        glTranslatef(baseX, baseY + baseHeight - baseWidth/3, beltZMin + beltWidth/2);
+        glScalef(baseWidth/1.5f, baseWidth*1.5f, baseWidth/1.5f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw piston that moves up and down
+    glPushMatrix();
+        // Position at end of arm, with y-position affected by press cycle
+        glTranslatef(baseX, baseY + baseHeight - baseWidth - pressPosition, beltZMin + beltWidth/2);
+
+        // Create a quadric object for drawing the cylinder
+        GLUquadric* quad = gluNewQuadric();
+        gluQuadricTexture(quad, GL_TRUE);
+        gluQuadricNormals(quad, GLU_SMOOTH);
+
+        // Rotate to align with y-axis
+        glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+
+        // Draw piston shaft
+        glColor3f(0.7f, 0.7f, 0.7f);  // Lighter color for piston
+        gluCylinder(quad, pistonRadius, pistonRadius, 2.0f, 16, 4);
+
+        // Draw press head at bottom of piston
+        glColor3f(0.5f, 0.5f, 0.5f);  // Darker color for press head
+        glTranslatef(0.0f, 0.0f, 2.0f);
+        glRotatef(180.0f, 1.0f, 0.0f, 0.0f);  // Flip to draw disk at bottom
+        gluDisk(quad, 0.0f, headSize, 16, 1);
+        gluCylinder(quad, headSize, headSize, headSize/2, 16, 4);
+        glTranslatef(0.0f, 0.0f, headSize/2);
+        gluDisk(quad, 0.0f, headSize, 16, 1);
+
+        gluDeleteQuadric(quad);
+    glPopMatrix();
+
+    // Draw indicator light on side of press (changes color based on press position)
+    glDisable(GL_TEXTURE_2D);
+    glPushMatrix();
+        glTranslatef(baseX + baseWidth/2 + 0.1f, baseY + baseHeight*0.8f, baseZ);
+        // Light color based on press position (red when down, green when up)
+        if (pressPosition < 0) {
+            glColor3f(1.0f, 0.2f, 0.2f);  // Red when pressing down
+        } else {
+            glColor3f(0.2f, 1.0f, 0.2f);  // Green when retracting
+        }
+        glutSolidSphere(0.2f, 16, 16);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
     // Floor texture
@@ -411,12 +499,12 @@ void display() {
     drawSupportStructure();
     // Draw rollers so that the belt appears to wrap around them.
     drawRollers();
-
+    drawPressDevice();
     // Draw the conveyor belt.
     drawConveyorBelt();
 
     // Draw items on the conveyor, spaced evenly.
-    int numItems = 9;
+    int numItems = 8;
     float spacing = beltXLength / numItems; // spacing along the belt
     for (int i = 0; i < numItems; i++) {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
