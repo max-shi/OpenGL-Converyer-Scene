@@ -1,8 +1,5 @@
 //  ========================================================================
-//  COSC363: Computer Graphics (2025);  University of Canterbury.
-//
-//  FILE NAME: Humanoid.cpp
-//  See Lab02.pdf for details
+//  Max Shi (msh254) assignment for COSC363
 //  ========================================================================
 
 #include <cmath>
