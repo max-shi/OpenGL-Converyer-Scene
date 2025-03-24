@@ -52,10 +52,6 @@ void updateScene(int value) {
 }
 
 //------------------- Draw an Individual Roller ---------------------------
-// Draws a roller positioned at xPos along the belt.
-// In our coordinate system, the belt runs along x, the floor is in the x-z plane (y is vertical).
-// To match the problem statement (with rollers’ axis along the belt width),
-// we draw the roller as a cylinder with its axis along z (i.e. its circular faces are in the x-y plane).
 void drawRoller(float xPos) {
     float rollerLength = beltWidth;  // Roller length equals belt's width.
     float yCenter = 2.1f;           // Height at which rollers sit
@@ -100,7 +96,7 @@ void drawRoller(float xPos) {
 }
 
 
-//------------------- Draw Both Rollers ---------------------------
+//------------------- Draw Rollers ---------------------------
 void drawRollers() {
     int numRollers = 40;
     float spacing = beltXLength / (numRollers - 1); // beltXLength is 40.0f (from -20 to 20)
