@@ -5,6 +5,7 @@
 //  See Lab02.pdf for details
 //  ========================================================================
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <GL/freeglut.h>
@@ -15,6 +16,39 @@ using namespace std;
 int cam_hgt = 4;    // Camera height
 float angle = 10.;  // Rotation angle for viewing
 GLuint floorTex;    // Texture ID for the floor
+
+float beltOffset = 0.0f;     // Current position along the belt
+float beltSpeed  = 0.1f;     // Speed of belt movement (units per update)
+float beltLength = 30.0f;    // Total length of the conveyor belt
+float beltWidth  = 5.0f;
+
+void updateBelt(int value) {
+    beltOffset += beltSpeed;
+    if (beltOffset > beltLength)
+        beltOffset = fmod(beltOffset, beltLength); // loop back
+
+    glutPostRedisplay();
+    glutTimerFunc(16, updateBelt, 0);
+}
+
+void drawConveyorBelt() {
+    glColor3f(0.3f, 0.3f, 0.3f);
+    glBegin(GL_QUADS);
+    glVertex3f(-beltWidth/2, 2.0f, 0.0f);
+    glVertex3f(-beltWidth/2, 2.0f, beltLength);
+    glVertex3f( beltWidth/2, 2.0f, beltLength);
+    glVertex3f( beltWidth/2, 2.0f, 0.0f);
+    glEnd();
+}
+
+void drawItem(float zPos) {
+    glPushMatrix();
+    glTranslatef(0.0f, 2.5f, zPos);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glutSolidCube(1.0);
+    glPopMatrix();
+}
+
 
 //-- Loads textures ---------------------------------------------------------
 void loadTextures() {
@@ -64,7 +98,14 @@ void display() {
     drawTexturedFloor();
     glEnable(GL_LIGHTING);
 
-    glFlush();
+    drawConveyorBelt();
+    drawItem(beltOffset);
+    float secondItemPos = beltOffset - 10.0f;
+    if (secondItemPos < 0)
+        secondItemPos += beltLength;
+    drawItem(secondItemPos);
+
+    glutSwapBuffers();
 }
 
 //-- Initialize OpenGL parameters ------------------------------------------
@@ -99,6 +140,7 @@ int main(int argc, char** argv) {
     glutCreateWindow("Main Application");
     initialize();
     glutDisplayFunc(display);
+    glutTimerFunc(16, updateBelt, 0);
     glutSpecialFunc(special);
     glutMainLoop();
     return 0;
