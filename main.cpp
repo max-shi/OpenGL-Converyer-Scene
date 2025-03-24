@@ -105,6 +105,155 @@ void drawRollers() {
         drawRoller(xPos);
     }
 }
+//------------------- Draw the Overhead Bar and Supports ---------------------------
+void drawSpringBars(float zPosition)
+{
+    // Scale factor for everything
+    float scaleFactor = 2.0f;
+
+    // Overhead-bar parameters (scaled)
+    float xLocation = -5.0f;
+    float topY    = 6.0f  * scaleFactor;  // originally 6.0f
+    float barLen  = 6.0f * scaleFactor;  // originally 15.0f
+    float barThk  = 0.2f  * scaleFactor;  // originally 0.2f
+    float sidePos = 6.0f;
+
+    // Bind metal texture
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(0.7f, 0.7f, 0.7f); // Light gray
+
+    //-------------- Overhead bar --------------
+    glPushMatrix();
+        glTranslatef(xLocation, topY, zPosition);      // move up to topY
+        glScalef(barLen, barThk, barThk);         // make the bar thicker/longer
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    //-------------- Left vertical support --------------
+    glPushMatrix();
+        glTranslatef(-sidePos + xLocation, topY / 2.0f, zPosition); // half of topY in height
+        glScalef(barThk, topY, barThk);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    //-------------- Right vertical support --------------
+    glPushMatrix();
+        glTranslatef(sidePos + xLocation, topY / 2.0f, zPosition);
+        glScalef(barThk, topY, barThk);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+//------------------- Draw a Single Spring (3× bigger) ---------------------------
+void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHeight)
+{
+    // Scale factor for the spring coils
+    float scaleFactor     = 2.0f;
+    float springRadius    = 0.4f  * scaleFactor; // originally 0.4f
+    float springThickness = 0.08f * scaleFactor; // originally 0.08f
+    float capSize         = 0.6f  * scaleFactor; // originally 0.6f
+
+    float numCoils        = 10.0f;
+    float coilBaseOffset  = 0.1f  * scaleFactor; // originally 0.1f
+
+    // Calculate spring's current vertical extension
+    float unscaledHeight = minHeight + (maxHeight - minHeight) *
+                           (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset));
+
+    // Multiply by scaleFactor so it stretches 3× taller
+    float currentHeight = unscaledHeight * scaleFactor;
+
+    // Bind metal texture for the spring
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+
+    glPushMatrix();
+        // Place the spring at (x, 0, z)
+        glTranslatef(x, 0.0f, z);
+
+        // Create a quadric for cylinders/disks
+        GLUquadric* quad = gluNewQuadric();
+        gluQuadricTexture(quad, GL_TRUE);
+        gluQuadricNormals(quad, GLU_SMOOTH);
+
+        //------------------ Base of the spring ------------------
+        glColor3f(0.5f, 0.5f, 0.5f); // darker gray
+        glRotatef(90.0f, 1.0f, 0.0f, 0.0f); // flip to draw disk on XZ-plane
+
+        // Make the base disk and a short cylinder for the base (scaled up)
+        float baseOuterRadius = springRadius + 0.1f * scaleFactor; // originally +0.1f
+        float baseHeight      = 0.1f  * scaleFactor;               // originally 0.1f
+
+        gluDisk(quad, 0.0f, baseOuterRadius, 16, 1);
+        gluCylinder(quad, baseOuterRadius, baseOuterRadius, baseHeight, 16, 4);
+        glTranslatef(0.0f, 0.0f, baseHeight);
+        gluDisk(quad, 0.0f, baseOuterRadius, 16, 1);
+
+        glRotatef(-90.0f, 1.0f, 0.0f, 0.0f); // rotate back for vertical coil
+
+        //------------------ Helical spring coil ------------------
+        glColor3f(0.7f, 0.7f, 0.7f); // lighter gray
+
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int i = 0; i <= 360 * (int)numCoils; i += 5)
+        {
+            float angle = i * M_PI / 180.0f;
+            float y = coilBaseOffset + (i / (360.0f * numCoils)) * currentHeight;
+            float xC = springRadius * cos(angle);
+            float zC = springRadius * sin(angle);
+
+            // Normal for outward direction
+            float normalX = xC / springRadius;
+            float normalZ = zC / springRadius;
+
+            // "Inner" vertex
+            glNormal3f(normalX, 0.0f, normalZ);
+            glTexCoord2f((float)i / (360.0f * numCoils), 0.0f);
+            glVertex3f(xC - normalX * springThickness, y, zC - normalZ * springThickness);
+
+            // "Outer" vertex
+            glNormal3f(normalX, 0.0f, normalZ);
+            glTexCoord2f((float)i / (360.0f * numCoils), 1.0f);
+            glVertex3f(xC + normalX * springThickness, y, zC + normalZ * springThickness);
+        }
+        glEnd();
+
+        //------------------ Top cap at the end of the coil ------------------
+        glTranslatef(0.0f, currentHeight + coilBaseOffset, 0.0f);
+        glColor3f(0.5f, 0.5f, 0.5f); // darker gray again
+        glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+
+        // Draw top disk
+        gluDisk(quad, 0.0f, capSize, 16, 1);
+
+        // A short cylinder (scaled up by 3) for the cap thickness
+        float capHeight = 0.3f * scaleFactor; // originally 0.3f
+        gluCylinder(quad, capSize, capSize, capHeight, 16, 4);
+
+        glTranslatef(0.0f, 0.0f, capHeight);
+        gluDisk(quad, 0.0f, capSize, 16, 1);
+
+        gluDeleteQuadric(quad);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+//------------------- Draw All Background Springs ---------------------------
+void drawBackgroundSprings()
+{
+    // Left spring: overhead bar at z = -20, coil at x = -5
+    drawSpringBars(-20.0f);
+    drawSpring(-7.5f, -20.0f, 0.0f, 6.f, 2.0f);
+    drawSpring(-5.0f, -20.0f, 2.0f, 6.f, 1.5f);
+    drawSpring(-2.5f, -20.0f, 4.0f, 6.f, 2.5f);
+    drawSpring(0.0f, -20.0f, 6.0f, 6.f, 2.5f);
+    drawSpring(-10.0f, -20.0f, -2.2f, 6.f, 2.5f);
+}
+
 
 //------------------- Draw Conveyor Belt ---------------------------
 void drawConveyorBelt() {
@@ -500,6 +649,7 @@ void display() {
     // Draw rollers so that the belt appears to wrap around them.
     drawRollers();
     drawPressDevice();
+    drawBackgroundSprings();
     // Draw the conveyor belt.
     drawConveyorBelt();
 
