@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 2.8...3.5)
 project(Assignment)
 
 add_executable(main.out main.cpp
-        loadTGA.h)
+        loadTGA.h
+        keyboardUtilities.cpp
+        keyboardUtilities.h)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL REQUIRED)
