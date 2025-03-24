@@ -44,10 +44,10 @@ void updateScene(int value) {
 void drawConveyorBelt() {
     glColor3f(0.3f, 0.3f, 0.3f); // Gray color.
     glBegin(GL_QUADS);
-        glVertex3f(-20.0f, 2.0f, beltZMin);
-        glVertex3f(-20.0f, 2.0f, beltZMax);
-        glVertex3f( 20.0f, 2.0f, beltZMax);
-        glVertex3f( 20.0f, 2.0f, beltZMin);
+        glVertex3f(-20.0f, 2.1f, beltZMin);
+        glVertex3f(-20.0f, 2.1f, beltZMax);
+        glVertex3f( 20.0f, 2.1f, beltZMax);
+        glVertex3f( 20.0f, 2.1f, beltZMin);
     glEnd();
 }
 
