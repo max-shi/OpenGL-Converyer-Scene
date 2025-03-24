@@ -39,13 +39,6 @@ void updateScene(int value) {
     if (beltOffset > beltXLength)
         beltOffset = fmod(beltOffset, beltXLength); // Loop back.
 
-    // Update roller rotation
-    // Convert belt linear movement to angular rotation
-    // (beltSpeed / (2*PI*rollerRadius)) * 360 degrees
-    rollerRotation += (beltSpeed / (2 * M_PI * rollerRadius)) * 360.0f;
-    if (rollerRotation > 360.0f)
-        rollerRotation = fmod(rollerRotation, 360.0f);
-
     // Update camera movement
     keyboardUtil.update();
 
