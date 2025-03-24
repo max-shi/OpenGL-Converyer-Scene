@@ -18,8 +18,8 @@ GLuint floorTex;
 
 // Conveyor belt globals (oriented along x-axis).
 float beltOffset = 0.0f;         // Current offset along the belt (x-axis)
-float beltSpeed  = 0.1f;          // Speed of belt movement (units per update)
-float beltXLength = 20.0f;        // Belt spans from x = -10 to x = +10.
+float beltSpeed  = 0.025f;         // Speed of belt movement (units per update)
+float beltXLength = 40.0f;        // Belt spans from x = -20 to x = +20.
 const float beltZMin = -5.0f;     // Belt z-start.
 const float beltZMax = -3.0f;      // Belt z-end.
 
@@ -44,27 +44,51 @@ void updateScene(int value) {
 void drawConveyorBelt() {
     glColor3f(0.3f, 0.3f, 0.3f); // Gray color.
     glBegin(GL_QUADS);
-        glVertex3f(-10.0f, 2.0f, beltZMin);
-        glVertex3f(-10.0f, 2.0f, beltZMax);
-        glVertex3f( 10.0f, 2.0f, beltZMax);
-        glVertex3f( 10.0f, 2.0f, beltZMin);
+        glVertex3f(-20.0f, 2.0f, beltZMin);
+        glVertex3f(-20.0f, 2.0f, beltZMax);
+        glVertex3f( 20.0f, 2.0f, beltZMax);
+        glVertex3f( 20.0f, 2.0f, beltZMin);
     glEnd();
 }
 
-//------------------- Draw an Item ---------------------------
-void drawItem(float offset) {
+//------------------- Draw Processed Item ---------------------------
+// Items are placed along the belt.
+// Compute worldX = -20 + offset, where offset ranges over [0, beltXLength].
+// If worldX < 0, the item is drawn as a cube whose scale interpolates
+// from 1.0 at x=-20 to 0.75 at x=-3 (and remains 0.75 for -3 ≤ worldX < 0).
+// If worldX >= 0, the item is drawn as a teapot scaled to 0.75.
+void drawProcessedItem(float offset) {
     glPushMatrix();
-        // Items move along the x-axis from x = -10 to 10.
-        glTranslatef(-10.0f + offset, 2.5f, (beltZMin + beltZMax) / 2.0f);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glutSolidCube(1.0);
+        // Compute world x coordinate.
+        float worldX = -20.0f + offset;
+        // Position item: at computed x, fixed y, and centered in z.
+        glTranslatef(worldX, 2.5f, (beltZMin + beltZMax) / 2.0f);
+
+        if (worldX < 0.0f) {
+            float scaleFactor;
+            if (worldX <= -3.0f) {
+                // Linear interpolation from 1.0 at x=-20 to 0.75 at x=-3.
+                // Total range is 17 units.
+                scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
+            } else {
+                scaleFactor = 0.75f;
+            }
+            glScalef(scaleFactor, scaleFactor, scaleFactor);
+            glColor3f(0.0f, 0.0f, 1.0f); // Render cube in blue.
+            glutSolidCube(1.0);
+        } else {
+            // For worldX >= 0, instantly switch to teapot.
+            glScalef(0.75f, 0.75f, 0.75f);
+            glColor3f(1.0f, 1.0f, 0.0f);
+            glutSolidTeapot(1.0);
+        }
     glPopMatrix();
 }
 
 //------------------- Draw Support Box Underneath Conveyor ---------------------------
 void drawSupportBox() {
-    // Support box spans x = -10 to 10, z from beltZMin to beltZMax, and y from 0 to 2.
-    float xLeft = -10.0f, xRight = 10.0f;
+    // Support box spans x = -20 to 20, z from beltZMin to beltZMax, and y from 0 to 2.
+    float xLeft = -20.0f, xRight = 20.0f;
     float zBack = beltZMin, zFront = beltZMax;
     float yBottom = 0.0f, yTop = 2.0f;
 
@@ -118,11 +142,12 @@ void drawTexturedFloor() {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, floorTex);
     glColor3f(1.0f, 1.0f, 1.0f);
+    // Floor now extends from x = -30 to 30 and z = -30 to 30.
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-15.0f, 0.0f, -15.0f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-15.0f, 0.0f,  15.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 15.0f, 0.0f,  15.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 15.0f, 0.0f, -15.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-30.0f, 0.0f, -30.0f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-30.0f, 0.0f,  30.0f);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f( 30.0f, 0.0f,  30.0f);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f( 30.0f, 0.0f, -30.0f);
     glEnd();
     glDisable(GL_TEXTURE_2D);
 }
@@ -156,11 +181,14 @@ void display() {
     glEnable(GL_LIGHTING);
     drawSupportBox();
     drawConveyorBelt();
-    drawItem(beltOffset);
-    float secondItemPos = beltOffset - 10.0f;
-    if (secondItemPos < 0)
-        secondItemPos += beltXLength;
-    drawItem(secondItemPos);
+
+    // Draw 8 items on the conveyor, spaced evenly.
+    int numItems = 9;
+    float spacing = beltXLength / numItems; // spacing along the belt
+    for (int i = 0; i < numItems; i++) {
+        float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
+        drawProcessedItem(itemOffset);
+    }
 
     glutSwapBuffers();
 }
