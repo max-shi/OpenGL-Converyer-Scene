@@ -12,7 +12,6 @@
 #include "keyboardUtilities.h"
 using namespace std;
 
-//------------------- Global Lighting & Material Declarations ---------------------------
 GLfloat globalLightAmbient[]  = {0.2f, 0.2f, 0.2f, 1.0f};
 GLfloat globalLightDiffuse[]  = {0.8f, 0.8f, 0.8f, 1.0f};
 GLfloat globalLightSpecular[] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -23,79 +22,75 @@ GLfloat matDiffuse[]   = {0.8f, 0.8f, 0.8f, 1.0f};
 GLfloat matSpecular[]  = {1.0f, 1.0f, 1.0f, 1.0f};
 GLfloat matShininess[] = {50.0f};
 
-//------------------- Function to Compute Shadow Projection Matrix ---------------------------
+bool isShadowPass = false;
+void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
+    if(isShadowPass)
+        glColor3f(0.2f, 0.2f, 0.2f);
+    else
+        glColor3f(r, g, b);
+}
+
 void computeShadowMatrix(GLfloat shadowMat[4][4], GLfloat groundPlane[4], GLfloat lightPos[4]) {
     GLfloat dot = groundPlane[0]*lightPos[0] +
                   groundPlane[1]*lightPos[1] +
                   groundPlane[2]*lightPos[2] +
                   groundPlane[3]*lightPos[3];
-
     shadowMat[0][0] = dot - lightPos[0] * groundPlane[0];
     shadowMat[1][0] = 0.0f - lightPos[0] * groundPlane[1];
     shadowMat[2][0] = 0.0f - lightPos[0] * groundPlane[2];
     shadowMat[3][0] = 0.0f - lightPos[0] * groundPlane[3];
-
     shadowMat[0][1] = 0.0f - lightPos[1] * groundPlane[0];
     shadowMat[1][1] = dot - lightPos[1] * groundPlane[1];
     shadowMat[2][1] = 0.0f - lightPos[1] * groundPlane[2];
     shadowMat[3][1] = 0.0f - lightPos[1] * groundPlane[3];
-
     shadowMat[0][2] = 0.0f - lightPos[2] * groundPlane[0];
     shadowMat[1][2] = 0.0f - lightPos[2] * groundPlane[1];
     shadowMat[2][2] = dot - lightPos[2] * groundPlane[2];
     shadowMat[3][2] = 0.0f - lightPos[2] * groundPlane[3];
-
     shadowMat[0][3] = 0.0f - lightPos[3] * groundPlane[0];
     shadowMat[1][3] = 0.0f - lightPos[3] * groundPlane[1];
     shadowMat[2][3] = 0.0f - lightPos[3] * groundPlane[2];
     shadowMat[3][3] = dot - lightPos[3] * groundPlane[3];
 }
 
-//-- Globals ---------------------------------------------------------------
-
-// Textures
 GLuint floorTex;
 GLuint beltTex;
 GLuint metalTex;
 
-// Processed item globals
 int numItems = 8;
 
-// Conveyor belt globals (oriented along x-axis).
-float beltOffset = 0.0f;          // Current offset along the belt (x-axis)
-float beltSpeed = 1.f / 60.f;     // Speed of belt movement (units per update)
-float beltXLength = 40.0f;        // Belt spans from x = -20 to x = +20
-const float beltZMin = -5.0f;     // Belt z-start
-const float beltZMax = -3.0f;     // Belt z-end
-const float beltWidth = beltZMax - beltZMin;  // Width of the belt (z-axis)
-const float beltThickness = 0.1f; // Thickness of the belt material
-const float rollerRadius = 0.3f;  // Radius of the rollers
-float rollerRotation = 0.0f;      // Current rotation angle of rollers (in degrees)
+float beltOffset = 0.0f;
+float beltSpeed = 1.f / 60.f;
+float beltXLength = 40.0f;
+const float beltZMin = -5.0f;
+const float beltZMax = -3.0f;
+const float beltWidth = beltZMax - beltZMin;
+const float beltThickness = 0.1f;
+const float rollerRadius = 0.3f;
+float rollerRotation = 0.0f;
 
-// Global instance of KeyboardUtilities.
 KeyboardUtilities keyboardUtil;
 
-//-- Particle System Globals ---------------------------------------------
 const int MAX_PARTICLES = 500;
-const float PARTICLE_LIFETIME = 1.5f;  // Maximum lifetime in seconds
-const float SPARK_GRAVITY = -9.8f;     // Gravity acceleration (m/s²)
-const float FLOOR_Y = 0.0f;            // Y position of the floor
-const float BOUNCE_DAMPING = 0.6f;     // Energy loss on bounce
+const float PARTICLE_LIFETIME = 1.5f;
+const float SPARK_GRAVITY = -9.8f;
+const float FLOOR_Y = 0.0f;
+const float BOUNCE_DAMPING = 0.6f;
 
 struct Particle {
-    float x, y, z;           // Position
-    float vx, vy, vz;        // Velocity
-    float r, g, b;           // Color
-    float lifetime;          // Remaining lifetime in seconds
-    float maxLifetime;       // Original maximum lifetime
-    float scale;             // Size of the particle
-    bool active;             // Whether the particle is active
+    float x, y, z;
+    float vx, vy, vz;
+    float r, g, b;
+    float lifetime;
+    float maxLifetime;
+    float scale;
+    bool active;
 };
 
 vector<Particle> particles(MAX_PARTICLES);
 bool sparkGeneration = false;
 float timeSinceLastEmission = 0.0f;
-float emissionRate = 0.001f;  // Time between particle emissions in seconds
+float emissionRate = 0.001f;
 
 //------------------- Initialize Particle System ----------------------
 void initParticleSystem() {
@@ -111,23 +106,17 @@ void createParticle(float originX, float originY, float originZ) {
             particles[i].x = originX;
             particles[i].y = originY;
             particles[i].z = originZ;
-
             float angle = (float)(rand() % 360) * M_PI / 180.0f;
-            float speed = 2.0f + (float)(rand() % 400) / 100.0f;  // 2.0 to 6.0
-
+            float speed = 2.0f + (float)(rand() % 400) / 100.0f;
             particles[i].vx = speed * cos(angle);
             particles[i].vz = speed * sin(angle);
             particles[i].vy = 1.0f + (float)(rand() % 100) / 50.0f;
-
             particles[i].r = 0.9f + (float)(rand() % 10) / 100.0f;
             particles[i].g = 0.5f + (float)(rand() % 50) / 100.0f;
             particles[i].b = (float)(rand() % 20) / 100.0f;
-
             particles[i].maxLifetime = PARTICLE_LIFETIME * (0.5f + (float)(rand() % 50) / 100.0f);
             particles[i].lifetime = particles[i].maxLifetime;
-
             particles[i].scale = 0.05f + (float)(rand() % 10) / 100.0f;
-
             particles[i].active = true;
             return;
         }
@@ -141,9 +130,7 @@ void updateParticles(float deltaTime) {
             particles[i].x += particles[i].vx * deltaTime;
             particles[i].y += particles[i].vy * deltaTime;
             particles[i].z += particles[i].vz * deltaTime;
-
             particles[i].vy += SPARK_GRAVITY * deltaTime;
-
             if (particles[i].y <= FLOOR_Y && particles[i].vy < 0) {
                 particles[i].y = FLOOR_Y;
                 particles[i].vy = -particles[i].vy * BOUNCE_DAMPING;
@@ -153,14 +140,12 @@ void updateParticles(float deltaTime) {
                     particles[i].vy = 0;
                 }
             }
-
             particles[i].lifetime -= deltaTime;
             if (particles[i].lifetime <= 0) {
                 particles[i].active = false;
             }
         }
     }
-
     if (sparkGeneration) {
         timeSinceLastEmission += deltaTime;
         while (timeSinceLastEmission >= emissionRate) {
@@ -178,7 +163,6 @@ void drawParticles() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glEnable(GL_POINT_SMOOTH);
     glEnable(GL_POINT_SPRITE);
-
     glPointSize(10.0f);
     glBegin(GL_POINTS);
     for (int i = 0; i < MAX_PARTICLES; i++) {
@@ -194,7 +178,6 @@ void drawParticles() {
         }
     }
     glEnd();
-
     glDisable(GL_POINT_SPRITE);
     glDisable(GL_POINT_SMOOTH);
     glDisable(GL_BLEND);
@@ -221,12 +204,10 @@ void updateScene(int value) {
     float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float deltaTime = currentTime - lastTime;
     lastTime = currentTime;
-
     beltOffset += beltSpeed;
     if (beltOffset > beltXLength)
         beltOffset = fmod(beltOffset, beltXLength);
     rollerRotation += beltSpeed * 180.0f / (M_PI * rollerRadius);
-
     keyboardUtil.update();
     displayParticleCheck();
     updateParticles(deltaTime);
@@ -245,7 +226,7 @@ void drawRoller(float xPos) {
         glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
         glBindTexture(GL_TEXTURE_2D, metalTex);
         glEnable(GL_TEXTURE_2D);
-        glColor3f(0.7f, 0.7f, 0.7f);
+        setCustomColor(0.7f, 0.7f, 0.7f);
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
         gluQuadricNormals(quad, GLU_SMOOTH);
@@ -282,7 +263,7 @@ void drawSpringBars(float zPosition) {
     float sidePos = 6.0f;
     glBindTexture(GL_TEXTURE_2D, metalTex);
     glEnable(GL_TEXTURE_2D);
-    glColor3f(0.7f, 0.7f, 0.7f);
+    setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
         glTranslatef(xLocation, topY, zPosition);
         glScalef(barLen, barThk, barThk);
@@ -318,7 +299,7 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
         gluQuadricNormals(quad, GLU_SMOOTH);
-        glColor3f(0.5f, 0.5f, 0.5f);
+        setCustomColor(0.5f, 0.5f, 0.5f);
         glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
         float baseOuterRadius = springRadius + 0.1f;
         float baseHeight  = 0.1f;
@@ -327,7 +308,7 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         glTranslatef(0.0f, 0.0f, baseHeight);
         gluDisk(quad, 0.0f, baseOuterRadius, 16, 1);
         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-        glColor3f(0.7f, 0.7f, 0.7f);
+        setCustomColor(0.7f, 0.7f, 0.7f);
         glBegin(GL_TRIANGLE_STRIP);
         for (int i = 0; i <= 360 * (int)numCoils; i += 5) {
             float angle = i * M_PI / 180.0f;
@@ -345,7 +326,7 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         }
         glEnd();
         glTranslatef(0.0f, currentHeight + coilBaseOffset, 0.0f);
-        glColor3f(0.5f, 0.5f, 0.5f);
+        setCustomColor(0.5f, 0.5f, 0.5f);
         glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
         gluDisk(quad, 0.0f, capSize, 16, 1);
         float capHeight = 0.6f;
@@ -357,7 +338,6 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
     glDisable(GL_TEXTURE_2D);
 }
 
-//------------------- Draw All Background Springs ---------------------------
 void drawBackgroundSprings() {
     drawSpringBars(-20.0f);
     drawSpring(-7.5f, -20.0f, 0.0f, 6.f, 2.0f);
@@ -367,14 +347,13 @@ void drawBackgroundSprings() {
     drawSpring(-10.0f, -20.0f, -2.2f, 6.f, 2.5f);
 }
 
-//------------------- Draw Conveyor Belt ---------------------------
 void drawConveyorBelt() {
     float xLeft = -20.0f, xRight = 20.0f;
     float yBase = 2.1f;
     float normalizedOffset = beltOffset / 7.5f;
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, beltTex);
-    glColor3f(0.9f, 0.9f, 0.9f);
+    setCustomColor(0.9f, 0.9f, 0.9f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f - normalizedOffset, 0.0f); glVertex3f(xLeft, yBase + rollerRadius, beltZMin);
         glTexCoord2f(0.0f - normalizedOffset, 1.0f); glVertex3f(xLeft, yBase + rollerRadius, beltZMax);
@@ -402,7 +381,6 @@ void drawConveyorBelt() {
     glDisable(GL_TEXTURE_2D);
 }
 
-//------------------- Draw Processed Item ---------------------------
 void drawProcessedItem(float offset) {
     glPushMatrix();
         float worldX = -20.0f + offset;
@@ -415,7 +393,7 @@ void drawProcessedItem(float offset) {
                 scaleFactor = 0.75f;
             }
             glScalef(scaleFactor, scaleFactor, scaleFactor);
-            glColor3f(0.0f, 0.0f, 1.0f);
+            setCustomColor(0.0f, 0.0f, 1.0f);
             glutSolidCube(1.0);
         } else {
             glTranslatef(0., -rollerRadius, 0.);
@@ -432,7 +410,7 @@ void drawProcessedItem(float offset) {
                 twist = twistFactor * maxTwist;
             }
             int segments = 32;
-            glColor3f(0.6f, 0.6f, 0.0f);
+            setCustomColor(0.6f, 0.6f, 0.0f);
             glBegin(GL_QUAD_STRIP);
                 for (int i = 0; i <= segments; i++) {
                     float theta = 2.0f * M_PI * i / segments;
@@ -468,7 +446,6 @@ void drawProcessedItem(float offset) {
     glPopMatrix();
 }
 
-//------------------- Draw Support Structure ---------------------------
 void drawSupportStructure() {
     float xLeft = -20.0f, xRight = 20.0f;
     float zBack = beltZMin - 0.5f, zFront = beltZMax + 0.5f;
@@ -476,7 +453,7 @@ void drawSupportStructure() {
     float legWidth = 0.3f;
     glBindTexture(GL_TEXTURE_2D, metalTex);
     glEnable(GL_TEXTURE_2D);
-    glColor3f(0.5f, 0.5f, 0.5f);
+    setCustomColor(0.5f, 0.5f, 0.5f);
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         glScalef(legWidth, yTop-yBottom, legWidth);
@@ -533,6 +510,26 @@ void drawSupportStructure() {
         glutSolidCube(1.0f);
     glPopMatrix();
     glPushMatrix();
+        glTranslatef((xLeft + xRight)/2, yTop, zFront - legWidth/2);
+        glScalef(xRight - xLeft, legWidth/2, legWidth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+    glPushMatrix();
+        glTranslatef((xLeft + xRight)/2, yTop, zBack + legWidth/2);
+        glScalef(xRight - xLeft, legWidth/2, legWidth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+    glPushMatrix();
+        glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zFront - legWidth/2);
+        glScalef(xRight - xLeft, legWidth, legWidth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+    glPushMatrix();
+        glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zBack + legWidth/2);
+        glScalef(xRight - xLeft, legWidth, legWidth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+    glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yTop, (zFront + zBack)/2);
         glScalef(legWidth, legWidth/2, zFront - zBack);
         glutSolidCube(1.0f);
@@ -542,13 +539,13 @@ void drawSupportStructure() {
         glScalef(legWidth, legWidth/2, zFront - zBack);
         glutSolidCube(1.0f);
     glPopMatrix();
-    glColor3f(0.4f, 0.4f, 0.4f);
+    setCustomColor(0.4f, 0.4f, 0.4f);
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yTop - rollerRadius * 1.5f, (zFront + zBack)/2);
         glScalef(xRight - xLeft, legWidth/2, zFront - zBack - legWidth);
         glutSolidCube(1.0f);
     glPopMatrix();
-    glColor3f(0.45f, 0.45f, 0.45f);
+    setCustomColor(0.45f, 0.45f, 0.45f);
     glPushMatrix();
         glTranslatef(xLeft + 1.0f, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         glRotatef(30.0f, 0.0f, 0.0f, 1.0f);
@@ -591,7 +588,7 @@ void drawPressDevice() {
     float pressPosition = 0.5f * sin(pressCycle + 0.6);
     glBindTexture(GL_TEXTURE_2D, metalTex);
     glEnable(GL_TEXTURE_2D);
-    glColor3f(0.6f, 0.6f, 0.6f);
+    setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight/2, baseZ);
         glScalef(baseWidth, baseHeight, baseDepth);
@@ -613,9 +610,9 @@ void drawPressDevice() {
         gluQuadricTexture(quad, GL_TRUE);
         gluQuadricNormals(quad, GLU_SMOOTH);
         glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-        glColor3f(0.7f, 0.7f, 0.7f);
+        setCustomColor(0.7f, 0.7f, 0.7f);
         gluCylinder(quad, pistonRadius, pistonRadius, 2.0f, 16, 4);
-        glColor3f(0.5f, 0.5f, 0.5f);
+        setCustomColor(0.5f, 0.5f, 0.5f);
         glTranslatef(0.0f, 0.0f, 2.0f);
         glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
         gluDisk(quad, 0.0f, headSize, 16, 1);
@@ -628,9 +625,9 @@ void drawPressDevice() {
     glPushMatrix();
         glTranslatef(baseX + baseWidth/2 + 0.1f, baseY + baseHeight*0.8f, baseZ);
         if (pressPosition < 0) {
-            glColor3f(1.0f, 0.2f, 0.2f);
+            setCustomColor(1.0f, 0.2f, 0.2f);
         } else {
-            glColor3f(0.2f, 1.0f, 0.2f);
+            setCustomColor(0.2f, 1.0f, 0.2f);
         }
         glutSolidSphere(0.2f, 16, 16);
     glPopMatrix();
@@ -645,7 +642,6 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &beltTex);
     glBindTexture(GL_TEXTURE_2D, beltTex);
     loadTGA("concrete.tga");
@@ -654,7 +650,6 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &metalTex);
     glBindTexture(GL_TEXTURE_2D, metalTex);
     loadTGA("concrete.tga");
@@ -669,7 +664,7 @@ void loadTextures() {
 void drawTexturedFloor() {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, floorTex);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    setCustomColor(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-30.0f, 0.0f, -30.0f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-30.0f, 0.0f,  30.0f);
@@ -684,7 +679,6 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
     float radYaw = keyboardUtil.getYaw() * M_PI / 180.0f;
     float radPitch = keyboardUtil.getPitch() * M_PI / 180.0f;
     float lookDirX = cos(radPitch) * sin(radYaw);
@@ -695,16 +689,10 @@ void display() {
               keyboardUtil.getPosY() + lookDirY,
               keyboardUtil.getPosZ() + lookDirZ,
               0.0, 1.0, 0.0);
-
-    // Update light position using our global light position.
     glLightfv(GL_LIGHT0, GL_POSITION, globalLightPosition);
-
-    // Draw the floor without lighting.
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
     glEnable(GL_LIGHTING);
-
-    // Draw scene objects.
     drawSupportStructure();
     drawRollers();
     drawPressDevice();
@@ -716,21 +704,18 @@ void display() {
         drawProcessedItem(itemOffset);
     }
     drawParticles();
-
-    // --- Render Planar Shadows ---
     GLfloat groundPlane[4] = {0.0f, 1.0f, 0.0f, 0.0f};
     GLfloat shadowMat[4][4];
     computeShadowMatrix(shadowMat, groundPlane, globalLightPosition);
-
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-2.0f, -2.0f);
     glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
     glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-
     glPushMatrix();
         glMultMatrixf((GLfloat *)shadowMat);
+        isShadowPass = true;
         drawSupportStructure();
         drawRollers();
         drawPressDevice();
@@ -740,9 +725,9 @@ void display() {
             float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
             drawProcessedItem(itemOffset);
         }
+        isShadowPass = false;
     glPopMatrix();
     glPopAttrib();
-
     glutSwapBuffers();
 }
 
