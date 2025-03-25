@@ -386,6 +386,7 @@ void drawProcessedItem(float offset) {
         float worldX = -20.0f + offset;
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
         if (worldX < 0.0f) {
+            // For items on the left, scale and draw a solid cube (blue).
             float scaleFactor;
             if (worldX <= -3.0f) {
                 scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
@@ -396,7 +397,8 @@ void drawProcessedItem(float offset) {
             setCustomColor(0.0f, 0.0f, 1.0f);
             glutSolidCube(1.0);
         } else {
-            glTranslatef(0., -rollerRadius, 0.);
+            // For items on the right, draw a twisted cylindrical item (yellow) with proper normals.
+            glTranslatef(0.0f, -rollerRadius, 0.0f);
             float growth = (worldX < 9.0f) ? (worldX / 9.0f) : 1.0f;
             float minHeight = 0.1f;
             float fullHeight = 1.0f;
@@ -410,7 +412,9 @@ void drawProcessedItem(float offset) {
                 twist = twistFactor * maxTwist;
             }
             int segments = 32;
-            setCustomColor(0.6f, 0.6f, 0.0f);
+            setCustomColor(0.9f, 0.9f, 0.0f);
+
+            // Draw the twisted cylindrical side with proper normals.
             glBegin(GL_QUAD_STRIP);
                 for (int i = 0; i <= segments; i++) {
                     float theta = 2.0f * M_PI * i / segments;
@@ -419,11 +423,20 @@ void drawProcessedItem(float offset) {
                     float twistedTheta = theta + twist * M_PI / 180.0f;
                     float xTop = radius * cos(twistedTheta);
                     float zTop = radius * sin(twistedTheta);
+
+                    // Normal for bottom vertex (points outward).
+                    glNormal3f(cos(theta), 0.0f, sin(theta));
                     glVertex3f(xBottom, 0.0f, zBottom);
+
+                    // Normal for top vertex (accounting for twist).
+                    glNormal3f(cos(twistedTheta), 0.0f, sin(twistedTheta));
                     glVertex3f(xTop, cylinderHeight, zTop);
                 }
             glEnd();
+
+            // Draw the bottom cap (flat, with normal pointing down).
             glBegin(GL_TRIANGLE_FAN);
+                glNormal3f(0.0f, -1.0f, 0.0f);
                 glVertex3f(0.0f, 0.0f, 0.0f);
                 for (int i = 0; i <= segments; i++) {
                     float theta = 2.0f * M_PI * i / segments;
@@ -432,7 +445,10 @@ void drawProcessedItem(float offset) {
                     glVertex3f(x, 0.0f, z);
                 }
             glEnd();
+
+            // Draw the top cap (flat, with normal pointing up).
             glBegin(GL_TRIANGLE_FAN);
+                glNormal3f(0.0f, 1.0f, 0.0f);
                 glVertex3f(0.0f, cylinderHeight, 0.0f);
                 for (int i = 0; i <= segments; i++) {
                     float theta = 2.0f * M_PI * i / segments;
@@ -445,6 +461,7 @@ void drawProcessedItem(float offset) {
         }
     glPopMatrix();
 }
+
 
 void drawSupportStructure() {
     float xLeft = -20.0f, xRight = 20.0f;
