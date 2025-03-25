@@ -475,26 +475,84 @@ void drawProcessedItem(float offset) {
     glPushMatrix();
         // Compute world x coordinate.
         float worldX = -20.0f + offset;
-        // Position item: at computed x, fixed y above the conveyor surface, and centered in z.
+        // Position the item above the belt and centered in z.
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
 
         if (worldX < 0.0f) {
+            // Original behavior for negative x (draw a cube).
             float scaleFactor;
             if (worldX <= -3.0f) {
-                // Linear interpolation from 1.0 at x=-20 to 0.75 at x=-3.
-                // Total range is 17 units.
+                // Linear interpolation from 1.0 at x = -20 to 0.75 at x = -3.
                 scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
             } else {
                 scaleFactor = 0.75f;
             }
             glScalef(scaleFactor, scaleFactor, scaleFactor);
-            glColor3f(0.0f, 0.0f, 1.0f); // Render cube in blue.
+            glColor3f(0.0f, 0.0f, 1.0f);
             glutSolidCube(1.0);
         } else {
-            // For worldX >= 0, instantly switch to teapot.
-            glScalef(0.75f, 0.75f, 0.75f);
-            glColor3f(1.0f, 1.0f, 0.0f);
-            glutSolidTeapot(1.0);
+            // New behavior for worldX >= 0:
+            glTranslatef(0.,-rollerRadius, 0.);
+            // --- Part 1: Grow from flat disk to full cylinder ---
+            // Define the transformation parameters.
+            // At x = 0, we want a very flat disk; at x = 9, a full cylinder.
+            float growth = (worldX < 9.0f) ? (worldX / 9.0f) : 1.0f;
+            float minHeight = 0.1f;   // Height when "crushed" (almost a disk)
+            float fullHeight = 1.0f;  // Full cylinder height at x = 9
+            float cylinderHeight = minHeight + growth * (fullHeight - minHeight);
+            float radius = 0.5f;      // Cylinder radius
+
+            // --- Part 2: Linear twist from x = 9 to x = 16 ---
+            float twist = 0.0f;
+            float maxTwist = 90.0f;  // Maximum twist angle in degrees.
+            if (worldX >= 9.0f) {
+                float twistFactor = (worldX - 9.0f) / (16.0f - 9.0f);
+                if (twistFactor > 1.0f) twistFactor = 1.0f;
+                twist = twistFactor * maxTwist;
+            }
+
+            // We'll now draw a cylinder with its bottom circle fixed and its top circle twisted by 'twist' degrees.
+            int segments = 32; // Number of segments for smoothness.
+            glColor3f(.6f, .6f, 0.0f);  // Yellow color (as before).
+
+            // Draw the side surface using a quad strip.
+            glBegin(GL_QUAD_STRIP);
+                for (int i = 0; i <= segments; i++) {
+                    float theta = 2.0f * M_PI * i / segments;
+                    // Bottom circle (no twist)
+                    float xBottom = radius * cos(theta);
+                    float zBottom = radius * sin(theta);
+                    // Top circle (apply twist rotation)
+                    float twistedTheta = theta + twist * M_PI / 180.0f;
+                    float xTop = radius * cos(twistedTheta);
+                    float zTop = radius * sin(twistedTheta);
+                    glVertex3f(xBottom, 0.0f, zBottom);
+                    glVertex3f(xTop, cylinderHeight, zTop);
+                }
+            glEnd();
+
+            // Draw the bottom disk.
+            glBegin(GL_TRIANGLE_FAN);
+                glVertex3f(0.0f, 0.0f, 0.0f); // Center
+                for (int i = 0; i <= segments; i++) {
+                    float theta = 2.0f * M_PI * i / segments;
+                    float x = radius * cos(theta);
+                    float z = radius * sin(theta);
+                    glVertex3f(x, 0.0f, z);
+                }
+            glEnd();
+
+            // Draw the top disk (with twist applied).
+            glBegin(GL_TRIANGLE_FAN);
+                glVertex3f(0.0f, cylinderHeight, 0.0f); // Center
+                for (int i = 0; i <= segments; i++) {
+                    float theta = 2.0f * M_PI * i / segments;
+                    float twistedTheta = theta + twist * M_PI / 180.0f;
+                    float x = radius * cos(twistedTheta);
+                    float z = radius * sin(twistedTheta);
+                    glVertex3f(x, cylinderHeight, z);
+                }
+            glEnd();
         }
     glPopMatrix();
 }
