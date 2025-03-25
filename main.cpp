@@ -15,7 +15,7 @@ using namespace std;
 GLfloat globalLightAmbient[]  = {0.2f, 0.2f, 0.2f, 1.0f};
 GLfloat globalLightDiffuse[]  = {0.8f, 0.8f, 0.8f, 1.0f};
 GLfloat globalLightSpecular[] = {1.0f, 1.0f, 1.0f, 1.0f};
-GLfloat globalLightPosition[] = {0.0f, 60.0f, 30.0f, 1.0f};
+GLfloat globalLightPosition[] = {0.0f, 30.0f, 50.0f, 1.0f};
 
 GLfloat matAmbient[]   = {0.2f, 0.2f, 0.2f, 1.0f};
 GLfloat matDiffuse[]   = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -224,7 +224,7 @@ void drawRoller(float xPos) {
         glTranslatef(xPos, yCenter, zCenter);
         glTranslatef(0.0f, 0.0f, -rollerLength / 2.0f);
         glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
-        glBindTexture(GL_TEXTURE_2D, metalTex);
+        glBindTexture(GL_TEXTURE_2D, floorTex);
         glEnable(GL_TEXTURE_2D);
         setCustomColor(0.7f, 0.7f, 0.7f);
         GLUquadric* quad = gluNewQuadric();
@@ -468,9 +468,9 @@ void drawSupportStructure() {
     float zBack = beltZMin - 0.5f, zFront = beltZMax + 0.5f;
     float yBottom = 0.0f, yTop = 2.1f - rollerRadius;
     float legWidth = 0.3f;
-    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glBindTexture(GL_TEXTURE_2D, floorTex);
     glEnable(GL_TEXTURE_2D);
-    setCustomColor(0.5f, 0.5f, 0.5f);
+    setCustomColor(1.f, 1.f, 1.f);
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         glScalef(legWidth, yTop-yBottom, legWidth);
@@ -669,7 +669,7 @@ void loadTextures() {
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     glGenTextures(1, &metalTex);
     glBindTexture(GL_TEXTURE_2D, metalTex);
-    loadTGA("concrete.tga");
+    loadTGA("metal.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
