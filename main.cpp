@@ -108,14 +108,10 @@ void drawRollers() {
 //------------------- Draw the Overhead Bar and Supports ---------------------------
 void drawSpringBars(float zPosition)
 {
-    // Scale factor for everything
-    float scaleFactor = 2.0f;
-
-    // Overhead-bar parameters (scaled)
     float xLocation = -5.0f;
-    float topY    = 6.0f  * scaleFactor;  // originally 6.0f
-    float barLen  = 6.0f * scaleFactor;  // originally 15.0f
-    float barThk  = 0.2f  * scaleFactor;  // originally 0.2f
+    float topY    = 12.0f;
+    float barLen  = 12.0f;
+    float barThk  = 0.4f;
     float sidePos = 6.0f;
 
     // Bind metal texture
@@ -147,24 +143,19 @@ void drawSpringBars(float zPosition)
     glDisable(GL_TEXTURE_2D);
 }
 
-//------------------- Draw a Single Spring (3× bigger) ---------------------------
+//------------------- Draw a Single Spring ---------------------------
 void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHeight)
 {
     // Scale factor for the spring coils
-    float scaleFactor     = 2.0f;
-    float springRadius    = 0.4f  * scaleFactor; // originally 0.4f
-    float springThickness = 0.08f * scaleFactor; // originally 0.08f
-    float capSize         = 0.6f  * scaleFactor; // originally 0.6f
+    float springRadius    = 0.8f;
+    float springThickness = 0.16f; // originally 0.08f
+    float capSize         = 1.2f; // originally 0.6f
 
     float numCoils        = 10.0f;
-    float coilBaseOffset  = 0.1f  * scaleFactor; // originally 0.1f
-
-    // Calculate spring's current vertical extension
+    float coilBaseOffset  = 0.2f; // originally 0.1f
     float unscaledHeight = minHeight + (maxHeight - minHeight) *
                            (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset));
-
-    // Multiply by scaleFactor so it stretches 3× taller
-    float currentHeight = unscaledHeight * scaleFactor;
+    float currentHeight = unscaledHeight * 2.;
 
     // Bind metal texture for the spring
     glBindTexture(GL_TEXTURE_2D, metalTex);
@@ -184,8 +175,8 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         glRotatef(90.0f, 1.0f, 0.0f, 0.0f); // flip to draw disk on XZ-plane
 
         // Make the base disk and a short cylinder for the base (scaled up)
-        float baseOuterRadius = springRadius + 0.1f * scaleFactor; // originally +0.1f
-        float baseHeight      = 0.1f  * scaleFactor;               // originally 0.1f
+        float baseOuterRadius = springRadius + 0.1f;
+        float baseHeight  = 0.1f;
 
         gluDisk(quad, 0.0f, baseOuterRadius, 16, 1);
         gluCylinder(quad, baseOuterRadius, baseOuterRadius, baseHeight, 16, 4);
@@ -230,7 +221,7 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         gluDisk(quad, 0.0f, capSize, 16, 1);
 
         // A short cylinder (scaled up by 3) for the cap thickness
-        float capHeight = 0.3f * scaleFactor; // originally 0.3f
+        float capHeight = 0.6f; // originally 0.3f
         gluCylinder(quad, capSize, capSize, capHeight, 16, 4);
 
         glTranslatef(0.0f, 0.0f, capHeight);
