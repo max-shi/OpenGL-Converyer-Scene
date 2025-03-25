@@ -721,6 +721,80 @@ void drawSilos() {
     }
 }
 
+//------------------- Draw Upgrader ---------------------------
+// Draws the base and arm of the upgrader
+void drawUpgrader(float upgraderX) {
+    // Constants for the base/arm
+    // float upgraderX = 3.0f;           // Position on the x-axis
+    float baseZ = beltZMin - 1.0f;      // Positioned on the -z side of the conveyor belt
+    float baseY = 0.0f;               // Starting from the floor
+    float baseWidth = 1.0f;
+    float baseHeight = 4.7f;          // Height of the arm base
+    float armWidth = 1.0f;
+
+    // Draw the base/arm of the upgrader
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+    setCustomColor(0.7f, 0.7f, 0.7f);
+
+    // Draw the arm base
+    glPushMatrix();
+        glTranslatef(upgraderX, baseY + baseHeight/2, baseZ);
+        glScalef(baseWidth, baseHeight, baseWidth);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw the horizontal arm that extends over the conveyor
+    glPushMatrix();
+        glTranslatef(upgraderX, baseY + baseHeight, (baseZ + (beltZMin + beltZMax)/2) / 2);
+        glScalef(armWidth, armWidth, (beltZMax - beltZMin) + 2.0f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+// Draws the translucent beam (scanner) without affecting shadow rendering
+void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float offsetAmount) {
+    // Constants for the beam
+    // float upgraderX = 3.0f;
+    float baseY = 0.0f;
+    float baseHeight = 4.7f;
+    float beamHeight = 3.5f;  // Height of the translucent beam
+    float beamWidth = 0.5f;
+
+    // Enable blending for transparency and disable lighting so shadows are not cast
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_LIGHTING);
+
+    // Pulse effect for the translucent beam
+    // 0.2f, 0.8f, 1.0f
+    float pulseIntensity = 0.6f + 0.4f * sin(beltOffset * 5.0f + offsetAmount);
+    glColor4f(a, b, c, 0.4f * pulseIntensity);
+
+    // Draw the main translucent beam
+    glPushMatrix();
+        glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
+        glScalef(beamWidth, beamHeight, beltZMax - beltZMin + 0.2f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw a glowing effect at the center of the beam
+    glColor4f(0.4f, 0.9f, 1.0f, 0.7f * pulseIntensity);
+    glPushMatrix();
+        glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
+        glScalef(beamWidth * 0.5f, beamHeight * 0.7f, (beltZMax - beltZMin) * 0.8f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Restore lighting and disable blending
+    glEnable(GL_LIGHTING);
+    glDisable(GL_BLEND);
+}
+
+
+
 
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
@@ -806,6 +880,12 @@ void display() {
         drawProcessedItem(itemOffset);
     }
     drawParticles();
+    drawUpgrader(3.0f);
+    drawUpgraderBeam(3.0f, 0.2, 0.8, 1.0, 0);
+    drawUpgrader(4.0f);
+    drawUpgraderBeam(4.0f, 0.8, 0.8, 0.2, 0.9);
+    drawUpgrader(5.0f);
+    drawUpgraderBeam(5.0f, 0.8, 0.2, 0.8, -1.0);
     GLfloat groundPlane[4] = {0.0f, 1.0f, 0.0f, 0.0f};
     GLfloat shadowMat[4][4];
     computeShadowMatrix(shadowMat, groundPlane, globalLightPosition);
@@ -829,6 +909,7 @@ void display() {
             drawProcessedItem(itemOffset);
         }
         isShadowPass = false;
+        drawUpgrader(3.0f);
     glPopMatrix();
     glPopAttrib();
     glutSwapBuffers();
