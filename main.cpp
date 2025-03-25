@@ -58,6 +58,8 @@ GLuint beltTex;
 GLuint metalTex;
 GLuint metalPlateTex;
 
+GLuint skyboxTex[6];
+
 int numItems = 8;
 
 float beltOffset = 0.0f;
@@ -832,7 +834,125 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    // --- SKYBOX: Load the 6 skybox textures ---
+    glGenTextures(6, skyboxTex);
+
+    // Left face (negx.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[0]);
+    loadTGA("negx.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Bottom face (negy.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[1]);
+    loadTGA("negy.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Front face (negz.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[2]);
+    loadTGA("negz.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Right face (posx.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[3]);
+    loadTGA("posx.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Top face (posy.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
+    loadTGA("posy.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Back face (posz.tga)
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[5]);
+    loadTGA("posz.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 }
+
+// ------------------- Draw the Skybox ---------------------------
+void drawSkybox() {
+    float size = 500.0f;
+    float halfSize = size / 2.0f;
+
+    glEnable(GL_TEXTURE_2D);
+
+    // Left face (x = -halfSize) using negx.tga
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[0]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(-halfSize, halfSize, halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
+    glEnd();
+
+    // Bottom face (y = -halfSize) using negy.tga
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[1]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, -halfSize, -halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
+    glEnd();
+
+    // Front face (z = -halfSize) using negz.tga
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[2]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
+    glEnd();
+
+    // Right face (x = halfSize) using posx.tga - HORIZONTALLY FLIPPED
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[3]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
+    glEnd();
+
+    // Top face (y = halfSize) using posy.tga
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, halfSize, -halfSize);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
+    glEnd();
+
+    // Back face (z = halfSize) using posz.tga
+    glBindTexture(GL_TEXTURE_2D, skyboxTex[5]);
+    glBegin(GL_QUADS);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+
 
 //------------------- Draw Textured Floor ---------------------------
 void drawTexturedFloor() {
@@ -864,6 +984,19 @@ void display() {
               keyboardUtil.getPosY() + lookDirY,
               keyboardUtil.getPosZ() + lookDirZ,
               0.0, 1.0, 0.0);
+
+    // --- SKYBOX: Draw the skybox so it always surrounds the camera ---
+    glPushMatrix();
+        // Remove translation so the skybox rotates with the camera but remains centered
+        float m[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, m);
+        m[12] = m[13] = m[14] = 0.0f;
+        glLoadMatrixf(m);
+        glDepthMask(GL_FALSE); // disable depth writes for skybox
+        drawSkybox();
+        glDepthMask(GL_TRUE);
+    glPopMatrix();
+
     glLightfv(GL_LIGHT0, GL_POSITION, globalLightPosition);
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
