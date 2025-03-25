@@ -202,57 +202,64 @@ void displayParticleCheck() {
     }
 }
 
+//------------------- Draw Textured Cube ---------------------------
 void drawTexturedCube(float width, float height, float depth) {
     float hw = width / 2.0f;
     float hh = height / 2.0f;
     float hd = depth / 2.0f;
 
-    // Front Face (z positive)
+    // Front Face (normal: 0,0,1)
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, hd);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, hd);
+        glNormal3f(0.0f, 0.0f, 1.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, hd);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, hd);
     glEnd();
 
-    // Back Face (z negative)
+    // Back Face (normal: 0,0,-1)
     glBegin(GL_QUADS);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, -hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, -hd);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+        glNormal3f(0.0f, 0.0f, -1.0f);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, -hd);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, -hd);
     glEnd();
 
-    // Left Face (x negative)
+    // Left Face (normal: -1,0,0)
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+        glNormal3f(-1.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
     glEnd();
 
-    // Right Face (x positive)
+    // Right Face (normal: 1,0,0)
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, hd);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, hd);
+        glNormal3f(1.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, hd);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, hd);
     glEnd();
 
-    // Top Face (y positive)
+    // Top Face (normal: 0,1,0)
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, hh, hd);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, hh, hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, hh, hd);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, hh, hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
     glEnd();
 
-    // Bottom Face (y negative)
+    // Bottom Face (normal: 0,-1,0)
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, -hh, hd);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, -hh, hd);
+        glNormal3f(0.0f, -1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, -hh, hd);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, -hh, hd);
     glEnd();
 }
 
@@ -325,18 +332,15 @@ void drawSpringBars(float zPosition) {
     setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
         glTranslatef(xLocation, topY, zPosition);
-        glScalef(barLen, barThk, barThk);
-        glutSolidCube(1.0f);
+        drawTexturedCube(barLen, barThk, barThk);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(-sidePos + xLocation, topY / 2.0f, zPosition);
-        glScalef(barThk, topY, barThk);
-        glutSolidCube(1.0f);
+        drawTexturedCube(barThk, topY, barThk);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(sidePos + xLocation, topY / 2.0f, zPosition);
-        glScalef(barThk, topY, barThk);
-        glutSolidCube(1.0f);
+        drawTexturedCube(barThk, topY, barThk);
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
 }
@@ -445,7 +449,7 @@ void drawProcessedItem(float offset) {
         float worldX = -20.0f + offset;
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
         if (worldX < 0.0f) {
-            // For items on the left, scale and draw a solid cube (blue).
+            // For items on the left, scale and draw a textured cube (blue).
             float scaleFactor;
             if (worldX <= -3.0f) {
                 scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
@@ -454,7 +458,7 @@ void drawProcessedItem(float offset) {
             }
             glScalef(scaleFactor, scaleFactor, scaleFactor);
             setCustomColor(0.0f, 0.0f, 1.0f);
-            glutSolidCube(1.0);
+            drawTexturedCube(1.0f, 1.0f, 1.0f);
         } else {
             // For items on the right, draw a twisted cylindrical item (yellow) with proper normals.
             glTranslatef(0.0f, -rollerRadius, 0.0f);
@@ -530,121 +534,83 @@ void drawSupportStructure() {
     glBindTexture(GL_TEXTURE_2D, floorTex);
     glEnable(GL_TEXTURE_2D);
     setCustomColor(1.f, 1.f, 1.f);
+    // Four corner legs:
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
-        glScalef(legWidth, yTop-yBottom, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, yTop-yBottom, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
-        glScalef(legWidth, yTop-yBottom, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, yTop-yBottom, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xRight - legWidth/2, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
-        glScalef(legWidth, yTop-yBottom, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, yTop-yBottom, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xRight - legWidth/2, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
-        glScalef(legWidth, yTop-yBottom, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, yTop-yBottom, legWidth);
     glPopMatrix();
+    // Additional supports along the span:
     int numSupports = 3;
     float supportSpacing = (xRight - xLeft) / (numSupports + 1);
     for (int i = 1; i <= numSupports; i++) {
         float xPos = xLeft + i * supportSpacing;
         glPushMatrix();
             glTranslatef(xPos, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
-            glScalef(legWidth, yTop-yBottom, legWidth);
-            glutSolidCube(1.0f);
+            drawTexturedCube(legWidth, yTop-yBottom, legWidth);
         glPopMatrix();
         glPushMatrix();
             glTranslatef(xPos, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
-            glScalef(legWidth, yTop-yBottom, legWidth);
-            glutSolidCube(1.0f);
+            drawTexturedCube(legWidth, yTop-yBottom, legWidth);
         glPopMatrix();
     }
+    // Horizontal beams:
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yTop, zFront - legWidth/2);
-        glScalef(xRight - xLeft, legWidth/2, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(xRight - xLeft, legWidth/2, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yTop, zBack + legWidth/2);
-        glScalef(xRight - xLeft, legWidth/2, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(xRight - xLeft, legWidth/2, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zFront - legWidth/2);
-        glScalef(xRight - xLeft, legWidth, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(xRight - xLeft, legWidth, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zBack + legWidth/2);
-        glScalef(xRight - xLeft, legWidth, legWidth);
-        glutSolidCube(1.0f);
-    glPopMatrix();
-    glPushMatrix();
-        glTranslatef((xLeft + xRight)/2, yTop, zFront - legWidth/2);
-        glScalef(xRight - xLeft, legWidth/2, legWidth);
-        glutSolidCube(1.0f);
-    glPopMatrix();
-    glPushMatrix();
-        glTranslatef((xLeft + xRight)/2, yTop, zBack + legWidth/2);
-        glScalef(xRight - xLeft, legWidth/2, legWidth);
-        glutSolidCube(1.0f);
-    glPopMatrix();
-    glPushMatrix();
-        glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zFront - legWidth/2);
-        glScalef(xRight - xLeft, legWidth, legWidth);
-        glutSolidCube(1.0f);
-    glPopMatrix();
-    glPushMatrix();
-        glTranslatef((xLeft + xRight)/2, yBottom + legWidth/2, zBack + legWidth/2);
-        glScalef(xRight - xLeft, legWidth, legWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(xRight - xLeft, legWidth, legWidth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yTop, (zFront + zBack)/2);
-        glScalef(legWidth, legWidth/2, zFront - zBack);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, legWidth/2, zFront - zBack);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xRight - legWidth/2, yTop, (zFront + zBack)/2);
-        glScalef(legWidth, legWidth/2, zFront - zBack);
-        glutSolidCube(1.0f);
+        drawTexturedCube(legWidth, legWidth/2, zFront - zBack);
     glPopMatrix();
+    // Extra angled supports:
     setCustomColor(0.4f, 0.4f, 0.4f);
-    glPushMatrix();
-        glTranslatef((xLeft + xRight)/2, yTop - rollerRadius * 1.5f, (zFront + zBack)/2);
-        glScalef(xRight - xLeft, legWidth/2, zFront - zBack - legWidth);
-        glutSolidCube(1.0f);
-    glPopMatrix();
-    setCustomColor(0.45f, 0.45f, 0.45f);
     glPushMatrix();
         glTranslatef(xLeft + 1.0f, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         glRotatef(30.0f, 0.0f, 0.0f, 1.0f);
-        glScalef(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
-        glutSolidCube(1.0f);
+        drawTexturedCube(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xLeft + 1.0f, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
         glRotatef(30.0f, 0.0f, 0.0f, 1.0f);
-        glScalef(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
-        glutSolidCube(1.0f);
+        drawTexturedCube(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xRight - 1.0f, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         glRotatef(-30.0f, 0.0f, 0.0f, 1.0f);
-        glScalef(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
-        glutSolidCube(1.0f);
+        drawTexturedCube(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(xRight - 1.0f, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
         glRotatef(-30.0f, 0.0f, 0.0f, 1.0f);
-        glScalef(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
-        glutSolidCube(1.0f);
+        drawTexturedCube(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
 }
@@ -667,21 +633,19 @@ void drawPressDevice() {
     setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight/2, baseZ);
-        glScalef(baseWidth, baseHeight, baseDepth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(baseWidth, baseHeight, baseDepth);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight, baseZ + armLength/2);
-        glScalef(baseWidth/1.5f, baseWidth/1.5f, armLength);
-        glutSolidCube(1.0f);
+        drawTexturedCube(baseWidth/1.5f, baseWidth/1.5f, armLength);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight - baseWidth/3, beltZMin + beltWidth/2);
-        glScalef(baseWidth/1.5f, baseWidth*1.5f, baseWidth/1.5f);
-        glutSolidCube(1.0f);
+        drawTexturedCube(baseWidth/1.5f, baseWidth*1.5f, baseWidth/1.5f);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight - baseWidth - pressPosition, beltZMin + beltWidth/2);
+        // The press piston is drawn using gluCylinder below.
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
         gluQuadricNormals(quad, GLU_SMOOTH);
@@ -760,8 +724,7 @@ void drawSilo(float x, float z) {
     setCustomColor(0.65f, 0.65f, 0.65f);
     glPushMatrix();
         glTranslatef(x, 0.1f, z);
-        glScalef(siloRadius * 2.2f, 0.2f, siloRadius * 2.2f);
-        glutSolidCube(1.0f);
+        drawTexturedCube(siloRadius * 2.2f, 0.2f, siloRadius * 2.2f);
     glPopMatrix();
 
     glDisable(GL_TEXTURE_2D);
@@ -783,14 +746,12 @@ void drawSilos() {
 // Draws the base and arm of the upgrader
 void drawUpgrader(float upgraderX) {
     // Constants for the base/arm
-    // float upgraderX = 3.0f;           // Position on the x-axis
     float baseZ = beltZMin - 1.0f;      // Positioned on the -z side of the conveyor belt
     float baseY = 0.0f;               // Starting from the floor
     float baseWidth = 1.0f;
     float baseHeight = 4.7f;          // Height of the arm base
     float armWidth = 1.0f;
 
-    // Draw the base/arm of the upgrader
     glBindTexture(GL_TEXTURE_2D, floorTex);
     glEnable(GL_TEXTURE_2D);
     setCustomColor(0.7f, 0.7f, 0.7f);
@@ -798,15 +759,13 @@ void drawUpgrader(float upgraderX) {
     // Draw the arm base
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2, baseZ);
-        glScalef(baseWidth, baseHeight, baseWidth);
-        glutSolidCube(1.0f);
+        drawTexturedCube(baseWidth, baseHeight, baseWidth);
     glPopMatrix();
 
     // Draw the horizontal arm that extends over the conveyor
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight, (baseZ + (beltZMin + beltZMax)/2) / 2);
-        glScalef(armWidth, armWidth, (beltZMax - beltZMin) + 2.0f);
-        glutSolidCube(1.0f);
+        drawTexturedCube(armWidth, armWidth, (beltZMax - beltZMin) + 2.0f);
     glPopMatrix();
 
     glDisable(GL_TEXTURE_2D);
@@ -815,38 +774,29 @@ void drawUpgrader(float upgraderX) {
 // Draws the translucent beam (scanner) without affecting shadow rendering
 void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float offsetAmount) {
     // Constants for the beam
-    // float upgraderX = 3.0f;
     float baseY = 0.0f;
     float baseHeight = 4.7f;
     float beamHeight = 3.5f;  // Height of the translucent beam
     float beamWidth = 0.5f;
 
-    // Enable blending for transparency and disable lighting so shadows are not cast
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_LIGHTING);
 
-    // Pulse effect for the translucent beam
-    // 0.2f, 0.8f, 1.0f
     float pulseIntensity = 0.6f + 0.4f * sin(beltOffset * 5.0f + offsetAmount);
     glColor4f(a, b, c, 0.4f * pulseIntensity);
 
-    // Draw the main translucent beam
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
-        glScalef(beamWidth, beamHeight, beltZMax - beltZMin + 0.2f);
-        glutSolidCube(1.0f);
+        drawTexturedCube(beamWidth, beamHeight, beltZMax - beltZMin + 0.2f);
     glPopMatrix();
 
-    // Draw a glowing effect at the center of the beam
     glColor4f(0.4f, 0.9f, 1.0f, 0.7f * pulseIntensity);
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
-        glScalef(beamWidth * 0.5f, beamHeight * 0.7f, (beltZMax - beltZMin) * 0.8f);
-        glutSolidCube(1.0f);
+        drawTexturedCube(beamWidth * 0.5f, beamHeight * 0.7f, (beltZMax - beltZMin) * 0.8f);
     glPopMatrix();
 
-    // Restore lighting and disable blending
     glEnable(GL_LIGHTING);
     glDisable(GL_BLEND);
 }
@@ -865,34 +815,25 @@ void drawKiln() {
     const float doorWidth  = 2.0f;
     const float doorHeight = 5.5f;
 
-    // Rotation angle for the kiln (in degrees)
     float angle = 90.f;
 
-    // Draw the main kiln body with proper texture mapping
     glBindTexture(GL_TEXTURE_2D, brickTex);
     glEnable(GL_TEXTURE_2D);
-    setCustomColor(0.8f, 0.3f, 0.3f);  // A warm reddish tone for the kiln
+    setCustomColor(0.8f, 0.3f, 0.3f);
 
     glPushMatrix();
-        // Position the kiln so that its base sits at (kilnBaseX, kilnBaseY, kilnBaseZ).
-        // Translate upward by half the kiln's height to move the center to the correct position.
         glTranslatef(kilnBaseX, kilnBaseY + kilnHeight / 2.0f, kilnBaseZ);
-        // Rotate the kiln as needed.
         glRotatef(angle, 0.0f, 1.0f, 0.0f);
-        // Instead of scaling a unit cube, draw our custom cube with the actual dimensions.
         drawTexturedCube(kilnWidth, kilnHeight, kilnDepth);
     glPopMatrix();
 
-    // Draw the kiln door on the front face.
-    // This door remains drawn with glutSolidCube for simplicity.
     glPushMatrix();
         glTranslatef(kilnBaseX, kilnBaseY, kilnBaseZ);
         glRotatef(angle, 0.0f, 1.0f, 0.0f);
-        // Position door on the front face: raised vertically and offset slightly forward.
         glTranslatef(0.0f, kilnHeight / 4.0f, kilnDepth / 2.0f + 0.01f);
-        setCustomColor(0.2f, 0.2f, 0.2f);  // Dark color for the door
+        setCustomColor(0.2f, 0.2f, 0.2f);
         glScalef(doorWidth, doorHeight, 0.1f);
-        glutSolidCube(1.0f);
+        glutSolidCube(1.0f); // Keeping the door drawn with glutSolidCube for simplicity.
     glPopMatrix();
 
     glDisable(GL_TEXTURE_2D);
@@ -1059,8 +1000,6 @@ void drawSkybox() {
     glDisable(GL_TEXTURE_2D);
 }
 
-
-
 //------------------- Draw Textured Floor ---------------------------
 void drawTexturedFloor() {
     glEnable(GL_TEXTURE_2D);
@@ -1094,12 +1033,11 @@ void display() {
 
     // --- SKYBOX: Draw the skybox so it always surrounds the camera ---
     glPushMatrix();
-        // Remove translation so the skybox rotates with the camera but remains centered
         float m[16];
         glGetFloatv(GL_MODELVIEW_MATRIX, m);
         m[12] = m[13] = m[14] = 0.0f;
         glLoadMatrixf(m);
-        glDepthMask(GL_FALSE); // disable depth writes for skybox
+        glDepthMask(GL_FALSE);
         drawSkybox();
         glDepthMask(GL_TRUE);
     glPopMatrix();
@@ -1196,11 +1134,9 @@ void initialize() {
     loadTextures();
     glEnable(GL_NORMALIZE);
 
-    // Set up the global light properties.
     glLightfv(GL_LIGHT0, GL_AMBIENT, globalLightAmbient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, globalLightDiffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, globalLightSpecular);
-    // Set the default material.
     glMaterialfv(GL_FRONT, GL_AMBIENT, matAmbient);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiffuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
