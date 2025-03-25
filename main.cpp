@@ -57,6 +57,7 @@ GLuint floorTex;
 GLuint beltTex;
 GLuint metalTex;
 GLuint metalPlateTex;
+GLuint brickTex;
 
 GLuint skyboxTex[6];
 
@@ -200,6 +201,61 @@ void displayParticleCheck() {
         }
     }
 }
+
+void drawTexturedCube(float width, float height, float depth) {
+    float hw = width / 2.0f;
+    float hh = height / 2.0f;
+    float hd = depth / 2.0f;
+
+    // Front Face (z positive)
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, hd);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, hd);
+    glEnd();
+
+    // Back Face (z negative)
+    glBegin(GL_QUADS);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, -hd);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+    glEnd();
+
+    // Left Face (x negative)
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+    glEnd();
+
+    // Right Face (x positive)
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, hd);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, hd);
+    glEnd();
+
+    // Top Face (y positive)
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, hh, hd);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, hh, hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
+    glEnd();
+
+    // Bottom Face (y negative)
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hh, -hd);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, -hh, hd);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, -hh, hd);
+    glEnd();
+}
+
 
 //------------------- Update Scene (Belt, Rollers & Camera) -------------------------
 void updateScene(int value) {
@@ -795,8 +851,52 @@ void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float of
     glDisable(GL_BLEND);
 }
 
+//------------------- Draws Kiln ---------------------------
+void drawKiln() {
+    // Define constants for the kiln dimensions
+    float kilnBaseX = -20.f;       // X-coordinate of the kiln's base
+    float kilnBaseY = 0.f;         // Y-coordinate of the kiln's base (floor level)
+    float kilnBaseZ = -4.f;        // Z-coordinate of the kiln's base
+    const float kilnWidth  = 4.0f;   // Width of the kiln body
+    const float kilnHeight = 6.0f;   // Height of the kiln body
+    const float kilnDepth  = 4.0f;   // Depth of the kiln body
 
+    // Define dimensions for the door on the kiln
+    const float doorWidth  = 2.0f;
+    const float doorHeight = 5.5f;
 
+    // Rotation angle for the kiln (in degrees)
+    float angle = 90.f;
+
+    // Draw the main kiln body with proper texture mapping
+    glBindTexture(GL_TEXTURE_2D, brickTex);
+    glEnable(GL_TEXTURE_2D);
+    setCustomColor(0.8f, 0.3f, 0.3f);  // A warm reddish tone for the kiln
+
+    glPushMatrix();
+        // Position the kiln so that its base sits at (kilnBaseX, kilnBaseY, kilnBaseZ).
+        // Translate upward by half the kiln's height to move the center to the correct position.
+        glTranslatef(kilnBaseX, kilnBaseY + kilnHeight / 2.0f, kilnBaseZ);
+        // Rotate the kiln as needed.
+        glRotatef(angle, 0.0f, 1.0f, 0.0f);
+        // Instead of scaling a unit cube, draw our custom cube with the actual dimensions.
+        drawTexturedCube(kilnWidth, kilnHeight, kilnDepth);
+    glPopMatrix();
+
+    // Draw the kiln door on the front face.
+    // This door remains drawn with glutSolidCube for simplicity.
+    glPushMatrix();
+        glTranslatef(kilnBaseX, kilnBaseY, kilnBaseZ);
+        glRotatef(angle, 0.0f, 1.0f, 0.0f);
+        // Position door on the front face: raised vertically and offset slightly forward.
+        glTranslatef(0.0f, kilnHeight / 4.0f, kilnDepth / 2.0f + 0.01f);
+        setCustomColor(0.2f, 0.2f, 0.2f);  // Dark color for the door
+        glScalef(doorWidth, doorHeight, 0.1f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
 
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
@@ -833,6 +933,13 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glGenTextures(1, &brickTex);
+    glBindTexture(GL_TEXTURE_2D, brickTex);
+    loadTGA("brick.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     // --- SKYBOX: Load the 6 skybox textures ---
@@ -1007,6 +1114,7 @@ void display() {
     drawBackgroundSprings();
     drawConveyorBelt();
     drawSilos();
+    drawKiln();
     float spacing = beltXLength / numItems;
     for (int i = 0; i < numItems; i++) {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
