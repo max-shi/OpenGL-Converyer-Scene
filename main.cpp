@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <vector>
 #include <GL/freeglut.h>
 #include "loadTGA.h"
 #include "keyboardUtilities.h"
@@ -17,6 +18,9 @@ using namespace std;
 GLuint floorTex;
 GLuint beltTex;
 GLuint metalTex;
+
+// Processed item globals
+int numItems = 8;
 
 // Conveyor belt globals (oriented along x-axis).
 float beltOffset = 0.0f;          // Current offset along the belt (x-axis)
@@ -32,13 +36,187 @@ float rollerRotation = 0.0f;      // Current rotation angle of rollers (in degre
 // Global instance of KeyboardUtilities.
 KeyboardUtilities keyboardUtil;
 
+//-- Particle System Globals ---------------------------------------------
+const int MAX_PARTICLES = 500;
+const float PARTICLE_LIFETIME = 1.5f;  // Maximum lifetime in seconds
+const float SPARK_GRAVITY = -9.8f;     // Gravity acceleration (m/s²)
+const float FLOOR_Y = 0.0f;            // Y position of the floor
+const float BOUNCE_DAMPING = 0.6f;     // Energy loss on bounce
+
+struct Particle {
+    float x, y, z;           // Position
+    float vx, vy, vz;        // Velocity
+    float r, g, b;           // Color
+    float lifetime;          // Remaining lifetime in seconds
+    float maxLifetime;       // Original maximum lifetime
+    float scale;             // Size of the particle
+    bool active;             // Whether the particle is active
+};
+
+vector<Particle> particles(MAX_PARTICLES);
+bool sparkGeneration = false;
+float timeSinceLastEmission = 0.0f;
+float emissionRate = 0.001f;  // Time between particle emissions in seconds
+
+//------------------- Initialize Particle System ----------------------
+void initParticleSystem() {
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        particles[i].active = false;
+    }
+}
+
+//------------------- Create New Particle ----------------------------
+void createParticle(float originX, float originY, float originZ) {
+    // Find an inactive particle
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (!particles[i].active) {
+            // Position at spark origin
+            particles[i].x = originX;
+            particles[i].y = originY;
+            particles[i].z = originZ;
+
+            // Random direction in xz-plane (horizontal)
+            float angle = (float)(rand() % 360) * M_PI / 180.0f;
+            float speed = 2.0f + (float)(rand() % 400) / 100.0f;  // 2.0 to 6.0
+
+            particles[i].vx = speed * cos(angle);
+            particles[i].vz = speed * sin(angle);
+            particles[i].vy = 1.0f + (float)(rand() % 100) / 50.0f;  // Small upward velocity
+
+            // Randomized color (orange/yellow/white for sparks)
+            particles[i].r = 0.9f + (float)(rand() % 10) / 100.0f;
+            particles[i].g = 0.5f + (float)(rand() % 50) / 100.0f;
+            particles[i].b = (float)(rand() % 20) / 100.0f;
+
+            // Randomized lifetime
+            particles[i].maxLifetime = PARTICLE_LIFETIME * (0.5f + (float)(rand() % 50) / 100.0f);
+            particles[i].lifetime = particles[i].maxLifetime;
+
+            // Randomized scale
+            particles[i].scale = 0.05f + (float)(rand() % 10) / 100.0f;
+
+            particles[i].active = true;
+            return;
+        }
+    }
+}
+
+//------------------- Update Particles ------------------------------
+void updateParticles(float deltaTime) {
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (particles[i].active) {
+            // Update position based on velocity
+            particles[i].x += particles[i].vx * deltaTime;
+            particles[i].y += particles[i].vy * deltaTime;
+            particles[i].z += particles[i].vz * deltaTime;
+
+            // Apply gravity to vertical velocity
+            particles[i].vy += SPARK_GRAVITY * deltaTime;
+
+            // Check for collision with floor and bounce
+            if (particles[i].y <= FLOOR_Y && particles[i].vy < 0) {
+                particles[i].y = FLOOR_Y;
+                particles[i].vy = -particles[i].vy * BOUNCE_DAMPING;
+
+                // Also dampen horizontal velocity on bounce
+                particles[i].vx *= 0.9f;
+                particles[i].vz *= 0.9f;
+
+                // If bounce is too small, stop bouncing
+                if (fabs(particles[i].vy) < 0.5f) {
+                    particles[i].vy = 0;
+                }
+            }
+
+            // Update lifetime
+            particles[i].lifetime -= deltaTime;
+
+            // Deactivate if lifetime expired
+            if (particles[i].lifetime <= 0) {
+                particles[i].active = false;
+            }
+        }
+    }
+
+    // Emit new particles if transformation is happening
+    if (sparkGeneration) {
+        timeSinceLastEmission += deltaTime;
+        while (timeSinceLastEmission >= emissionRate) {
+            createParticle(0.0f, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
+            timeSinceLastEmission -= emissionRate;
+        }
+    }
+}
+
+//------------------- Draw Particles --------------------------------
+void drawParticles() {
+    // Disable lighting for particles (they'll be self-illuminated)
+    glDisable(GL_LIGHTING);
+    glDepthMask(GL_FALSE);  // Don't write to depth buffer (for transparency)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending for glow effect
+
+    // Use point sprites for particles
+    glEnable(GL_POINT_SMOOTH);
+    glEnable(GL_POINT_SPRITE);
+
+    glPointSize(10.0f);
+    glBegin(GL_POINTS);
+
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (particles[i].active) {
+            // Set color with alpha based on lifetime
+            float lifeRatio = particles[i].lifetime / particles[i].maxLifetime;
+            float alpha = lifeRatio;
+
+            // Make particles fade from white to orange/red as they age
+            float r = particles[i].r;
+            float g = particles[i].g * lifeRatio;
+            float b = particles[i].b * lifeRatio * 0.5f;
+
+            glColor4f(r, g, b, alpha);
+            glPointSize(particles[i].scale * 10.0f * lifeRatio);
+            glVertex3f(particles[i].x, particles[i].y, particles[i].z);
+        }
+    }
+
+    glEnd();
+
+    // Reset state
+    glDisable(GL_POINT_SPRITE);
+    glDisable(GL_POINT_SMOOTH);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_LIGHTING);
+}
+
+void displayParticleCheck() {
+    float spacing = beltXLength / numItems;
+    sparkGeneration = false;  // Reset flag
+
+    for (int i = 0; i < numItems; i++) {
+        float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
+        float worldX = -20.0f + itemOffset;
+
+        // If an item is crossing the transformation point (within a small range of x=0)
+        if (worldX > -0.5f && worldX < 0.5f) {
+            sparkGeneration = true;
+            break;
+        }
+    }
+}
+
 //------------------- Update Scene (Belt, Rollers & Camera) -------------------------
 void updateScene(int value) {
+    static float lastTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
     // Update conveyor belt offset along the x-axis.
     beltOffset += beltSpeed;
     if (beltOffset > beltXLength)
         beltOffset = fmod(beltOffset, beltXLength); // Loop back.
-
     // Update roller rotation angle.
     // The relationship is: angular displacement = linear displacement / radius (in radians)
     // Converting to degrees: angle = beltSpeed * (180/(π*rollerRadius))
@@ -46,7 +224,8 @@ void updateScene(int value) {
 
     // Update camera movement
     keyboardUtil.update();
-
+    displayParticleCheck();
+    updateParticles(deltaTime);
     glutPostRedisplay();
     glutTimerFunc(16, updateScene, 0); // Roughly 60 FPS.
 }
@@ -645,13 +824,12 @@ void display() {
     drawConveyorBelt();
 
     // Draw items on the conveyor, spaced evenly.
-    int numItems = 8;
     float spacing = beltXLength / numItems; // spacing along the belt
     for (int i = 0; i < numItems; i++) {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
         drawProcessedItem(itemOffset);
     }
-
+    drawParticles();
     glutSwapBuffers();
 }
 
@@ -697,7 +875,6 @@ void initialize() {
     glEnable(GL_TEXTURE_2D);
     loadTextures();
     glEnable(GL_NORMALIZE);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-5., 5., -5., 5., 5., 1000.);
@@ -712,7 +889,7 @@ int main(int argc, char** argv) {
     glutCreateWindow("Industrial Conveyor Belt Simulation");
 
     initialize();
-
+    initParticleSystem();
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboardDownCallback);
     glutKeyboardUpFunc(keyboardUpCallback);
