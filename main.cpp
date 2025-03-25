@@ -733,7 +733,7 @@ void drawUpgrader(float upgraderX) {
     float armWidth = 1.0f;
 
     // Draw the base/arm of the upgrader
-    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glBindTexture(GL_TEXTURE_2D, floorTex);
     glEnable(GL_TEXTURE_2D);
     setCustomColor(0.7f, 0.7f, 0.7f);
 
