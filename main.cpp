@@ -58,6 +58,7 @@ GLuint beltTex;
 GLuint metalTex;
 GLuint metalPlateTex;
 GLuint brickTex;
+GLuint metalWallTex;
 
 GLuint skyboxTex[6];
 
@@ -839,6 +840,46 @@ void drawKiln() {
     glDisable(GL_TEXTURE_2D);
 }
 
+//------------------- Draws Packer ---------------------------
+void drawPacker() {
+    // Define constants for the kiln dimensions
+    float packerBaseX = 24.f;       // X-coordinate of the kiln's base
+    float packerBaseY = 0.f;         // Y-coordinate of the kiln's base (floor level)
+    float packerBaseZ = -4.f;        // Z-coordinate of the kiln's base
+    const float packerWidth  = 8.0f;   // Width of the kiln body
+    const float packerHeight = 6.0f;   // Height of the kiln body
+    const float packerDepth  = 9.0f;   // Depth of the kiln body
+
+    // Define dimensions for the door on the kiln
+    const float doorWidth  = 2.0f;
+    const float doorHeight = 5.5f;
+
+    float angle = -90.f;
+
+    glBindTexture(GL_TEXTURE_2D, metalWallTex);
+    glEnable(GL_TEXTURE_2D);
+    setCustomColor(0.2f, 0.8f, 0.5f);
+
+    glPushMatrix();
+    glTranslatef(packerBaseX, packerBaseY + packerHeight / 2.0f, packerBaseZ);
+    glRotatef(angle, 0.0f, 1.0f, 0.0f);
+    drawTexturedCube(packerWidth, packerHeight, packerDepth);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(packerBaseX, packerBaseY, packerBaseZ);
+    glRotatef(angle, 0.0f, 1.0f, 0.0f);
+    glTranslatef(0.0f, packerHeight / 4.0f, packerDepth / 2.0f + 0.01f);
+    setCustomColor(0.2f, 0.2f, 0.2f);
+    glScalef(doorWidth, doorHeight, 0.1f);
+    glutSolidCube(1.0f); // Keeping the door drawn with glutSolidCube for simplicity.
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+
+
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
 
@@ -881,6 +922,15 @@ void loadTextures() {
     loadTGA("brick.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glGenTextures(1, &metalWallTex);
+    glBindTexture(GL_TEXTURE_2D, metalWallTex);
+    loadTGA("metalWall.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     // --- SKYBOX: Load the 6 skybox textures ---
@@ -1053,6 +1103,7 @@ void display() {
     drawConveyorBelt();
     drawSilos();
     drawKiln();
+    drawPacker();
     float spacing = beltXLength / numItems;
     for (int i = 0; i < numItems; i++) {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
@@ -1083,6 +1134,8 @@ void display() {
         drawBackgroundSprings();
         drawConveyorBelt();
         drawSilos();
+        drawKiln();
+        drawPacker();
         for (int i = 0; i < numItems; i++) {
             float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
             drawProcessedItem(itemOffset);
