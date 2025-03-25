@@ -651,14 +651,86 @@ void drawPressDevice() {
     glDisable(GL_TEXTURE_2D);
 }
 
+//------------------- Draw Silo ---------------------------
+void drawSilo(float x, float z) {
+    const float siloHeight = 20.0f;
+    const float siloRadius = 4.5f;
+    const float roofHeight = 3.0f;
+    const int segments = 32;
+
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+
+    // Draw the cylindrical body of the silo
+    setCustomColor(0.85f, 0.85f, 0.85f);
+    glPushMatrix();
+        glTranslatef(x, 0.0f, z);
+        GLUquadric* quad = gluNewQuadric();
+        gluQuadricTexture(quad, GL_TRUE);
+        gluQuadricNormals(quad, GLU_SMOOTH);
+
+        // Draw the main cylinder
+        glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+        gluCylinder(quad, siloRadius, siloRadius, siloHeight, segments, 8);
+
+        // Draw the bottom cap
+        gluDisk(quad, 0.0f, siloRadius, segments, 1);
+
+        // Draw the conical roof
+        glTranslatef(0.0f, 0.0f, siloHeight);
+        gluCylinder(quad, siloRadius, 0.0f, roofHeight, segments, 8);
+
+        gluDeleteQuadric(quad);
+    glPopMatrix();
+
+    // Draw a small pipe/vent on top
+    setCustomColor(0.6f, 0.6f, 0.6f);
+    glPushMatrix();
+        glTranslatef(x, siloHeight + roofHeight - 0.5f, z);
+        glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+
+        GLUquadric* pipeQuad = gluNewQuadric();
+        gluQuadricTexture(pipeQuad, GL_TRUE);
+        gluQuadricNormals(pipeQuad, GLU_SMOOTH);
+
+        gluCylinder(pipeQuad, 0.3f, 0.3f, 1.0f, 16, 2);
+        gluDeleteQuadric(pipeQuad);
+    glPopMatrix();
+
+    // Draw a small platform around the base
+    setCustomColor(0.65f, 0.65f, 0.65f);
+    glPushMatrix();
+        glTranslatef(x, 0.1f, z);
+        glScalef(siloRadius * 2.2f, 0.2f, siloRadius * 2.2f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+//------------------- Draw All Silos ---------------------------
+void drawSilos() {
+    float startX = 15.0f;
+    float z = -20.0f;
+    float spacing = 9.0f;
+
+    for (int i = 0; i < 4; i++) {
+        float x = startX + i * spacing;
+        drawSilo(x, z);
+    }
+}
+
+
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
+
     glGenTextures(1, &floorTex);
     glBindTexture(GL_TEXTURE_2D, floorTex);
     loadTGA("concrete.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
     glGenTextures(1, &beltTex);
     glBindTexture(GL_TEXTURE_2D, beltTex);
     loadTGA("concrete.tga");
@@ -667,6 +739,7 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
     glGenTextures(1, &metalTex);
     glBindTexture(GL_TEXTURE_2D, metalTex);
     loadTGA("metal.tga");
@@ -690,6 +763,7 @@ void drawTexturedFloor() {
     glEnd();
     glDisable(GL_TEXTURE_2D);
 }
+
 
 //------------------- Display Callback ---------------------------
 void display() {
@@ -715,6 +789,7 @@ void display() {
     drawPressDevice();
     drawBackgroundSprings();
     drawConveyorBelt();
+    drawSilos();
     float spacing = beltXLength / numItems;
     for (int i = 0; i < numItems; i++) {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
@@ -738,6 +813,7 @@ void display() {
         drawPressDevice();
         drawBackgroundSprings();
         drawConveyorBelt();
+        drawSilos();
         for (int i = 0; i < numItems; i++) {
             float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
             drawProcessedItem(itemOffset);
