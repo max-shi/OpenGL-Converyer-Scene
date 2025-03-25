@@ -479,6 +479,7 @@ void drawProcessedItem(float offset) {
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
 
         if (worldX < 0.0f) {
+            // Before the press (x < 0): Draw a blue cube
             float scaleFactor;
             if (worldX <= -3.0f) {
                 // Linear interpolation from 1.0 at x=-20 to 0.75 at x=-3.
@@ -490,14 +491,111 @@ void drawProcessedItem(float offset) {
             glScalef(scaleFactor, scaleFactor, scaleFactor);
             glColor3f(0.0f, 0.0f, 1.0f); // Render cube in blue.
             glutSolidCube(1.0);
+        } else if (worldX < 9.0f) {
+            // After the press (0 <= x < 9): Draw a disk/cylinder that grows in height
+            float heightScale = 0.1f + (worldX / 8.0f) * 0.9f;  // Height grows from 0.1 to 1.0
+            float radiusScale = 0.75f;  // Keep the radius consistent
+
+            glScalef(radiusScale, heightScale, radiusScale);
+
+            // Create a quadric for the cylinder
+            GLUquadric* quad = gluNewQuadric();
+            gluQuadricNormals(quad, GLU_SMOOTH);
+
+            // Rotate to align with y-axis (cylinder stands upright)
+            glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+
+            // Color transitions from blue to red as it grows
+            float blueComponent = 1.0f - (worldX / 9.0f);
+            float redComponent = worldX / 9.0f;
+            glColor3f(redComponent, 0.2f, blueComponent);
+
+            // Draw cylinder
+            gluCylinder(quad, 1.0f, 1.0f, 1.0f, 24, 2);
+
+            // Draw top disk
+            glPushMatrix();
+            glTranslatef(0.0f, 0.0f, 1.0f);
+            gluDisk(quad, 0.0f, 1.0f, 24, 1);
+            glPopMatrix();
+
+            // Draw bottom disk
+            glPushMatrix();
+            gluDisk(quad, 0.0f, 1.0f, 24, 1);
+            glPopMatrix();
+
+            gluDeleteQuadric(quad);
         } else {
-            // For worldX >= 0, instantly switch to teapot.
+            // After the kiln (x >= 9): Draw a yellow teapot
             glScalef(0.75f, 0.75f, 0.75f);
             glColor3f(1.0f, 1.0f, 0.0f);
             glutSolidTeapot(1.0);
         }
     glPopMatrix();
 }
+
+//------------------- Draw Kiln Structure ---------------------------
+void drawKiln() {
+    // Kiln position
+    float kilnX = 9.0f;
+    float kilnY = 2.5f;
+    float kilnZ = (beltZMin + beltZMax) / 2.0f;
+
+    // Kiln dimensions
+    float kilnWidth = 4.0f;
+    float kilnHeight = 5.0f;
+    float kilnDepth = beltWidth + 1.0f;
+
+    // Use brick-like texture if available, otherwise use color
+    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glEnable(GL_TEXTURE_2D);
+
+    // Draw kiln structure (a simple arch over the conveyor)
+    glColor3f(0.8f, 0.3f, 0.2f);  // Brick-red color
+
+    // Left side wall
+    glPushMatrix();
+    glTranslatef(kilnX, kilnY + kilnHeight/2, beltZMin - kilnDepth/4);
+    glScalef(kilnWidth/2, kilnHeight, kilnDepth/2);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Right side wall
+    glPushMatrix();
+    glTranslatef(kilnX, kilnY + kilnHeight/2, beltZMax + kilnDepth/4);
+    glScalef(kilnWidth/2, kilnHeight, kilnDepth/2);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Top arch
+    glPushMatrix();
+    glTranslatef(kilnX, kilnY + kilnHeight, kilnZ);
+    glScalef(kilnWidth/2, kilnHeight/5, kilnDepth);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+
+    // Draw glowing interior (suggesting heat)
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+
+    // Interior glow (pulsating orange-red)
+    float pulseIntensity = 0.7f + 0.3f * sin(beltOffset * 10.0f);
+    glColor4f(1.0f, 0.3f * pulseIntensity, 0.0f, 0.8f);
+
+    // Draw the glowing interior as a slightly smaller cube
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    glPushMatrix();
+    glTranslatef(kilnX, kilnY + kilnHeight/2, kilnZ);
+    glScalef(kilnWidth/3, kilnHeight*0.8f, kilnDepth*0.8f);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
+}
+
 
 //------------------- Draw Support Structure ---------------------------
 void drawSupportStructure() {
@@ -820,6 +918,7 @@ void display() {
     drawRollers();
     drawPressDevice();
     drawBackgroundSprings();
+    drawKiln();
     // Draw the conveyor belt.
     drawConveyorBelt();
 
