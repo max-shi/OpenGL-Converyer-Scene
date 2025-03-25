@@ -56,6 +56,7 @@ void computeShadowMatrix(GLfloat shadowMat[4][4], GLfloat groundPlane[4], GLfloa
 GLuint floorTex;
 GLuint beltTex;
 GLuint metalTex;
+GLuint metalPlateTex;
 
 int numItems = 8;
 
@@ -658,7 +659,7 @@ void drawSilo(float x, float z) {
     const float roofHeight = 3.0f;
     const int segments = 32;
 
-    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
     glEnable(GL_TEXTURE_2D);
 
     // Draw the cylindrical body of the silo
@@ -743,6 +744,15 @@ void loadTextures() {
     glGenTextures(1, &metalTex);
     glBindTexture(GL_TEXTURE_2D, metalTex);
     loadTGA("metal.tga");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glGenTextures(1, &metalPlateTex);
+    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
+    loadTGA("metalPlate.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
