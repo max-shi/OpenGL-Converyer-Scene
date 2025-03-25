@@ -934,10 +934,10 @@ void drawSkybox() {
     // Top face (y = halfSize) using posy.tga
     glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, halfSize, -halfSize);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, halfSize, halfSize);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, halfSize, halfSize);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, halfSize, halfSize);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
 
     // Back face (z = halfSize) using posz.tga
