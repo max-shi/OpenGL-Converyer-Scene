@@ -531,7 +531,7 @@ void drawSupportStructure() {
     float zBack = beltZMin - 0.5f, zFront = beltZMax + 0.5f;
     float yBottom = 0.0f, yTop = 2.1f - rollerRadius;
     float legWidth = 0.3f;
-    glBindTexture(GL_TEXTURE_2D, floorTex);
+    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
     glEnable(GL_TEXTURE_2D);
     setCustomColor(1.f, 1.f, 1.f);
     // Four corner legs:
