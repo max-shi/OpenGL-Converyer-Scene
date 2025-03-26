@@ -36,21 +36,35 @@ void computeShadowMatrix(GLfloat shadowMat[4][4], GLfloat groundPlane[4], GLfloa
                   groundPlane[2]*lightPos[2] +
                   groundPlane[3]*lightPos[3];
     shadowMat[0][0] = dot - lightPos[0] * groundPlane[0];
-    shadowMat[1][0] = 0.0f - lightPos[0] * groundPlane[1];
-    shadowMat[2][0] = 0.0f - lightPos[0] * groundPlane[2];
-    shadowMat[3][0] = 0.0f - lightPos[0] * groundPlane[3];
-    shadowMat[0][1] = 0.0f - lightPos[1] * groundPlane[0];
+    shadowMat[1][0] = - lightPos[0] * groundPlane[1];
+    shadowMat[2][0] = - lightPos[0] * groundPlane[2];
+    shadowMat[3][0] = - lightPos[0] * groundPlane[3];
+    shadowMat[0][1] = - lightPos[1] * groundPlane[0];
     shadowMat[1][1] = dot - lightPos[1] * groundPlane[1];
-    shadowMat[2][1] = 0.0f - lightPos[1] * groundPlane[2];
-    shadowMat[3][1] = 0.0f - lightPos[1] * groundPlane[3];
-    shadowMat[0][2] = 0.0f - lightPos[2] * groundPlane[0];
-    shadowMat[1][2] = 0.0f - lightPos[2] * groundPlane[1];
+    shadowMat[2][1] = - lightPos[1] * groundPlane[2];
+    shadowMat[3][1] = - lightPos[1] * groundPlane[3];
+    shadowMat[0][2] = - lightPos[2] * groundPlane[0];
+    shadowMat[1][2] = - lightPos[2] * groundPlane[1];
     shadowMat[2][2] = dot - lightPos[2] * groundPlane[2];
-    shadowMat[3][2] = 0.0f - lightPos[2] * groundPlane[3];
-    shadowMat[0][3] = 0.0f - lightPos[3] * groundPlane[0];
-    shadowMat[1][3] = 0.0f - lightPos[3] * groundPlane[1];
-    shadowMat[2][3] = 0.0f - lightPos[3] * groundPlane[2];
+    shadowMat[3][2] = - lightPos[2] * groundPlane[3];
+    shadowMat[0][3] = - lightPos[3] * groundPlane[0];
+    shadowMat[1][3] = - lightPos[3] * groundPlane[1];
+    shadowMat[2][3] = - lightPos[3] * groundPlane[2];
     shadowMat[3][3] = dot - lightPos[3] * groundPlane[3];
+}
+
+// Helper functions for conditional texture binding
+void bindTextureIfNeeded(GLuint tex) {
+    if (!isShadowPass) {
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glEnable(GL_TEXTURE_2D);
+    }
+}
+
+void disableTextureIfNeeded() {
+    if (!isShadowPass) {
+        glDisable(GL_TEXTURE_2D);
+    }
 }
 
 GLuint floorTex;
@@ -141,14 +155,12 @@ void updateParticles(float deltaTime) {
                 particles[i].vy = -particles[i].vy * BOUNCE_DAMPING;
                 particles[i].vx *= 0.9f;
                 particles[i].vz *= 0.9f;
-                if (fabs(particles[i].vy) < 0.5f) {
+                if (fabs(particles[i].vy) < 0.5f)
                     particles[i].vy = 0;
-                }
             }
             particles[i].lifetime -= deltaTime;
-            if (particles[i].lifetime <= 0) {
+            if (particles[i].lifetime <= 0)
                 particles[i].active = false;
-            }
         }
     }
     if (sparkGeneration) {
@@ -208,8 +220,6 @@ void drawTexturedCube(float width, float height, float depth) {
     float hw = width / 2.0f;
     float hh = height / 2.0f;
     float hd = depth / 2.0f;
-
-    // Front Face (normal: 0,0,1)
     glBegin(GL_QUADS);
         glNormal3f(0.0f, 0.0f, 1.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, hd);
@@ -217,8 +227,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, hd);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, hd);
     glEnd();
-
-    // Back Face (normal: 0,0,-1)
     glBegin(GL_QUADS);
         glNormal3f(0.0f, 0.0f, -1.0f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
@@ -226,8 +234,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, -hd);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, -hd);
     glEnd();
-
-    // Left Face (normal: -1,0,0)
     glBegin(GL_QUADS);
         glNormal3f(-1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
@@ -235,8 +241,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-hw, hh, hd);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
     glEnd();
-
-    // Right Face (normal: 1,0,0)
     glBegin(GL_QUADS);
         glNormal3f(1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(hw, -hh, hd);
@@ -244,8 +248,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(hw, hh, hd);
     glEnd();
-
-    // Top Face (normal: 0,1,0)
     glBegin(GL_QUADS);
         glNormal3f(0.0f, 1.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, hh, hd);
@@ -253,8 +255,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hh, -hd);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hh, -hd);
     glEnd();
-
-    // Bottom Face (normal: 0,-1,0)
     glBegin(GL_QUADS);
         glNormal3f(0.0f, -1.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hh, -hd);
@@ -263,7 +263,6 @@ void drawTexturedCube(float width, float height, float depth) {
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, -hh, hd);
     glEnd();
 }
-
 
 //------------------- Update Scene (Belt, Rollers & Camera) -------------------------
 void updateScene(int value) {
@@ -291,8 +290,7 @@ void drawRoller(float xPos) {
         glTranslatef(xPos, yCenter, zCenter);
         glTranslatef(0.0f, 0.0f, -rollerLength / 2.0f);
         glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
-        glBindTexture(GL_TEXTURE_2D, floorTex);
-        glEnable(GL_TEXTURE_2D);
+        bindTextureIfNeeded(floorTex);
         setCustomColor(0.7f, 0.7f, 0.7f);
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
@@ -307,7 +305,7 @@ void drawRoller(float xPos) {
             gluDisk(quad, 0.0f, rollerRadius, 32, 1);
         glPopMatrix();
         gluDeleteQuadric(quad);
-        glDisable(GL_TEXTURE_2D);
+        disableTextureIfNeeded();
     glPopMatrix();
 }
 
@@ -328,8 +326,7 @@ void drawSpringBars(float zPosition) {
     float barLen  = 12.0f;
     float barThk  = 0.4f;
     float sidePos = 6.0f;
-    glBindTexture(GL_TEXTURE_2D, metalTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(metalTex);
     setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
         glTranslatef(xLocation, topY, zPosition);
@@ -343,7 +340,7 @@ void drawSpringBars(float zPosition) {
         glTranslatef(sidePos + xLocation, topY / 2.0f, zPosition);
         drawTexturedCube(barThk, topY, barThk);
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 //------------------- Draw a Single Spring ---------------------------
@@ -353,11 +350,9 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
     float capSize         = 1.2f;
     float numCoils        = 10.0f;
     float coilBaseOffset  = 0.2f;
-    float unscaledHeight = minHeight + (maxHeight - minHeight) *
-                           (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset));
+    float unscaledHeight = minHeight + (maxHeight - minHeight) * (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset));
     float currentHeight = unscaledHeight * 2.;
-    glBindTexture(GL_TEXTURE_2D, metalTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(metalTex);
     glPushMatrix();
         glTranslatef(x, 0.0f, z);
         GLUquadric* quad = gluNewQuadric();
@@ -381,10 +376,8 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
             float zC = springRadius * sin(angle);
             float normalX = xC / springRadius;
             float normalZ = zC / springRadius;
-            glNormal3f(normalX, 0.0f, normalZ);
             glTexCoord2f((float)i / (360.0f * numCoils), 0.0f);
             glVertex3f(xC - normalX * springThickness, y, zC - normalZ * springThickness);
-            glNormal3f(normalX, 0.0f, normalZ);
             glTexCoord2f((float)i / (360.0f * numCoils), 1.0f);
             glVertex3f(xC + normalX * springThickness, y, zC + normalZ * springThickness);
         }
@@ -399,7 +392,7 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
         gluDisk(quad, 0.0f, capSize, 16, 1);
         gluDeleteQuadric(quad);
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 void drawBackgroundSprings() {
@@ -415,8 +408,7 @@ void drawConveyorBelt() {
     float xLeft = -20.0f, xRight = 20.0f;
     float yBase = 2.1f;
     float normalizedOffset = beltOffset / 7.5f;
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, beltTex);
+    bindTextureIfNeeded(beltTex);
     setCustomColor(0.9f, 0.9f, 0.9f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f - normalizedOffset, 0.0f); glVertex3f(xLeft, yBase + rollerRadius, beltZMin);
@@ -442,7 +434,7 @@ void drawConveyorBelt() {
         glTexCoord2f(0.2f, 0.1f); glVertex3f(xRight, yBase + rollerRadius, beltZMax);
         glTexCoord2f(0.0f, 0.1f); glVertex3f(xRight, yBase - rollerRadius, beltZMax);
     glEnd();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 void drawProcessedItem(float offset) {
@@ -450,18 +442,15 @@ void drawProcessedItem(float offset) {
         float worldX = -20.0f + offset;
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
         if (worldX < 0.0f) {
-            // For items on the left, scale and draw a textured cube (blue).
             float scaleFactor;
-            if (worldX <= -3.0f) {
+            if (worldX <= -3.0f)
                 scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
-            } else {
+            else
                 scaleFactor = 0.75f;
-            }
             glScalef(scaleFactor, scaleFactor, scaleFactor);
             setCustomColor(0.0f, 0.0f, 1.0f);
             drawTexturedCube(1.0f, 1.0f, 1.0f);
         } else {
-            // For items on the right, draw a twisted cylindrical item (yellow) with proper normals.
             glTranslatef(0.0f, -rollerRadius, 0.0f);
             float growth = (worldX < 9.0f) ? (worldX / 9.0f) : 1.0f;
             float minHeight = 0.1f;
@@ -477,8 +466,6 @@ void drawProcessedItem(float offset) {
             }
             int segments = 32;
             setCustomColor(0.9f, 0.9f, 0.0f);
-
-            // Draw the twisted cylindrical side with proper normals.
             glBegin(GL_QUAD_STRIP);
                 for (int i = 0; i <= segments; i++) {
                     float theta = 2.0f * M_PI * i / segments;
@@ -487,18 +474,12 @@ void drawProcessedItem(float offset) {
                     float twistedTheta = theta + twist * M_PI / 180.0f;
                     float xTop = radius * cos(twistedTheta);
                     float zTop = radius * sin(twistedTheta);
-
-                    // Normal for bottom vertex (points outward).
                     glNormal3f(cos(theta), 0.0f, sin(theta));
                     glVertex3f(xBottom, 0.0f, zBottom);
-
-                    // Normal for top vertex (accounting for twist).
                     glNormal3f(cos(twistedTheta), 0.0f, sin(twistedTheta));
                     glVertex3f(xTop, cylinderHeight, zTop);
                 }
             glEnd();
-
-            // Draw the bottom cap (flat, with normal pointing down).
             glBegin(GL_TRIANGLE_FAN);
                 glNormal3f(0.0f, -1.0f, 0.0f);
                 glVertex3f(0.0f, 0.0f, 0.0f);
@@ -509,8 +490,6 @@ void drawProcessedItem(float offset) {
                     glVertex3f(x, 0.0f, z);
                 }
             glEnd();
-
-            // Draw the top cap (flat, with normal pointing up).
             glBegin(GL_TRIANGLE_FAN);
                 glNormal3f(0.0f, 1.0f, 0.0f);
                 glVertex3f(0.0f, cylinderHeight, 0.0f);
@@ -526,16 +505,13 @@ void drawProcessedItem(float offset) {
     glPopMatrix();
 }
 
-
 void drawSupportStructure() {
     float xLeft = -20.0f, xRight = 20.0f;
     float zBack = beltZMin - 0.5f, zFront = beltZMax + 0.5f;
     float yBottom = 0.0f, yTop = 2.1f - rollerRadius;
     float legWidth = 0.3f;
-    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(metalPlateTex);
     setCustomColor(1.f, 1.f, 1.f);
-    // Four corner legs:
     glPushMatrix();
         glTranslatef(xLeft + legWidth/2, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
         drawTexturedCube(legWidth, yTop-yBottom, legWidth);
@@ -552,7 +528,6 @@ void drawSupportStructure() {
         glTranslatef(xRight - legWidth/2, yBottom + (yTop-yBottom)/2, zBack + legWidth/2);
         drawTexturedCube(legWidth, yTop-yBottom, legWidth);
     glPopMatrix();
-    // Additional supports along the span:
     int numSupports = 3;
     float supportSpacing = (xRight - xLeft) / (numSupports + 1);
     for (int i = 1; i <= numSupports; i++) {
@@ -566,7 +541,6 @@ void drawSupportStructure() {
             drawTexturedCube(legWidth, yTop-yBottom, legWidth);
         glPopMatrix();
     }
-    // Horizontal beams:
     glPushMatrix();
         glTranslatef((xLeft + xRight)/2, yTop, zFront - legWidth/2);
         drawTexturedCube(xRight - xLeft, legWidth/2, legWidth);
@@ -591,7 +565,6 @@ void drawSupportStructure() {
         glTranslatef(xRight - legWidth/2, yTop, (zFront + zBack)/2);
         drawTexturedCube(legWidth, legWidth/2, zFront - zBack);
     glPopMatrix();
-    // Extra angled supports:
     setCustomColor(0.4f, 0.4f, 0.4f);
     glPushMatrix();
         glTranslatef(xLeft + 1.0f, yBottom + (yTop-yBottom)/2, zFront - legWidth/2);
@@ -613,7 +586,7 @@ void drawSupportStructure() {
         glRotatef(-30.0f, 0.0f, 0.0f, 1.0f);
         drawTexturedCube(sqrt(pow(yTop-yBottom, 2) + pow(2.0f, 2)), legWidth/3, legWidth/2);
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 //------------------- Draw Press Device ---------------------------
@@ -629,8 +602,7 @@ void drawPressDevice() {
     float headSize = 0.8f;
     float pressCycle = fmod(beltOffset * (2.0f * M_PI / 5.0f), 2.0f * M_PI);
     float pressPosition = 0.5f * sin(pressCycle + 0.6);
-    glBindTexture(GL_TEXTURE_2D, metalTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(metalTex);
     setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight/2, baseZ);
@@ -646,33 +618,32 @@ void drawPressDevice() {
     glPopMatrix();
     glPushMatrix();
         glTranslatef(baseX, baseY + baseHeight - baseWidth - pressPosition, beltZMin + beltWidth/2);
-        // The press piston is drawn using gluCylinder below.
-        GLUquadric* quad = gluNewQuadric();
-        gluQuadricTexture(quad, GL_TRUE);
-        gluQuadricNormals(quad, GLU_SMOOTH);
-        glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-        setCustomColor(0.7f, 0.7f, 0.7f);
-        gluCylinder(quad, pistonRadius, pistonRadius, 2.0f, 16, 4);
-        setCustomColor(0.5f, 0.5f, 0.5f);
-        glTranslatef(0.0f, 0.0f, 2.0f);
-        glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
-        gluDisk(quad, 0.0f, headSize, 16, 1);
-        gluCylinder(quad, headSize, headSize, headSize/2, 16, 4);
-        glTranslatef(0.0f, 0.0f, headSize/2);
-        gluDisk(quad, 0.0f, headSize, 16, 1);
-        gluDeleteQuadric(quad);
+        {
+            GLUquadric* quad = gluNewQuadric();
+            gluQuadricTexture(quad, GL_TRUE);
+            gluQuadricNormals(quad, GLU_SMOOTH);
+            glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+            setCustomColor(0.7f, 0.7f, 0.7f);
+            gluCylinder(quad, pistonRadius, pistonRadius, 2.0f, 16, 4);
+            setCustomColor(0.5f, 0.5f, 0.5f);
+            glTranslatef(0.0f, 0.0f, 2.0f);
+            glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
+            gluDisk(quad, 0.0f, headSize, 16, 1);
+            gluCylinder(quad, headSize, headSize, headSize/2, 16, 4);
+            glTranslatef(0.0f, 0.0f, headSize/2);
+            gluDisk(quad, 0.0f, headSize, 16, 1);
+            gluDeleteQuadric(quad);
+        }
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
     glPushMatrix();
         glTranslatef(baseX + baseWidth/2 + 0.1f, baseY + baseHeight*0.8f, baseZ);
-        if (pressPosition < 0) {
+        if (pressPosition < 0)
             setCustomColor(1.0f, 0.2f, 0.2f);
-        } else {
+        else
             setCustomColor(0.2f, 1.0f, 0.2f);
-        }
         glutSolidSphere(0.2f, 16, 16);
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
 }
 
 //------------------- Draw Silo ---------------------------
@@ -681,54 +652,40 @@ void drawSilo(float x, float z) {
     const float siloRadius = 4.5f;
     const float roofHeight = 3.0f;
     const int segments = 32;
-
-    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
-    glEnable(GL_TEXTURE_2D);
-
-    // Draw the cylindrical body of the silo
+    bindTextureIfNeeded(metalPlateTex);
     setCustomColor(0.85f, 0.85f, 0.85f);
     glPushMatrix();
         glTranslatef(x, 0.0f, z);
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
         gluQuadricNormals(quad, GLU_SMOOTH);
-
-        // Draw the main cylinder
         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
         gluCylinder(quad, siloRadius, siloRadius, siloHeight, segments, 8);
-
-        // Draw the bottom cap
         gluDisk(quad, 0.0f, siloRadius, segments, 1);
-
-        // Draw the conical roof
         glTranslatef(0.0f, 0.0f, siloHeight);
         gluCylinder(quad, siloRadius, 0.0f, roofHeight, segments, 8);
-
         gluDeleteQuadric(quad);
     glPopMatrix();
-
-    // Draw a small pipe/vent on top
+    disableTextureIfNeeded();
     setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
+        bindTextureIfNeeded(metalPlateTex);
         glTranslatef(x, siloHeight + roofHeight - 0.5f, z);
         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-
-        GLUquadric* pipeQuad = gluNewQuadric();
-        gluQuadricTexture(pipeQuad, GL_TRUE);
-        gluQuadricNormals(pipeQuad, GLU_SMOOTH);
-
-        gluCylinder(pipeQuad, 0.3f, 0.3f, 1.0f, 16, 2);
-        gluDeleteQuadric(pipeQuad);
+        {
+            GLUquadric* pipeQuad = gluNewQuadric();
+            gluQuadricTexture(pipeQuad, GL_TRUE);
+            gluQuadricNormals(pipeQuad, GLU_SMOOTH);
+            gluCylinder(pipeQuad, 0.3f, 0.3f, 1.0f, 16, 2);
+            gluDeleteQuadric(pipeQuad);
+        }
+        disableTextureIfNeeded();
     glPopMatrix();
-
-    // Draw a small platform around the base
     setCustomColor(0.65f, 0.65f, 0.65f);
     glPushMatrix();
         glTranslatef(x, 0.1f, z);
         drawTexturedCube(siloRadius * 2.2f, 0.2f, siloRadius * 2.2f);
     glPopMatrix();
-
-    glDisable(GL_TEXTURE_2D);
 }
 
 //------------------- Draw All Silos ---------------------------
@@ -736,7 +693,6 @@ void drawSilos() {
     float startX = 15.0f;
     float z = -20.0f;
     float spacing = 9.0f;
-
     for (int i = 0; i < 4; i++) {
         float x = startX + i * spacing;
         drawSilo(x, z);
@@ -744,152 +700,115 @@ void drawSilos() {
 }
 
 //------------------- Draw Upgrader ---------------------------
-// Draws the base and arm of the upgrader
 void drawUpgrader(float upgraderX) {
-    // Constants for the base/arm
-    float baseZ = beltZMin - 1.0f;      // Positioned on the -z side of the conveyor belt
-    float baseY = 0.0f;               // Starting from the floor
+    float baseZ = beltZMin - 1.0f;
+    float baseY = 0.0f;
     float baseWidth = 1.0f;
-    float baseHeight = 4.7f;          // Height of the arm base
+    float baseHeight = 4.7f;
     float armWidth = 1.0f;
-
-    glBindTexture(GL_TEXTURE_2D, floorTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(floorTex);
     setCustomColor(0.7f, 0.7f, 0.7f);
-
-    // Draw the arm base
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2, baseZ);
         drawTexturedCube(baseWidth, baseHeight, baseWidth);
     glPopMatrix();
-
-    // Draw the horizontal arm that extends over the conveyor
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight, (baseZ + (beltZMin + beltZMax)/2) / 2);
         drawTexturedCube(armWidth, armWidth, (beltZMax - beltZMin) + 2.0f);
     glPopMatrix();
-
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
-// Draws the translucent beam (scanner) without affecting shadow rendering
+//------------------- Draw Upgrader Beam ---------------------------
 void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float offsetAmount) {
-    // Constants for the beam
     float baseY = 0.0f;
     float baseHeight = 4.7f;
-    float beamHeight = 3.5f;  // Height of the translucent beam
+    float beamHeight = 3.5f;
     float beamWidth = 0.5f;
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_LIGHTING);
-
     float pulseIntensity = 0.6f + 0.4f * sin(beltOffset * 5.0f + offsetAmount);
     glColor4f(a, b, c, 0.4f * pulseIntensity);
-
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
         drawTexturedCube(beamWidth, beamHeight, beltZMax - beltZMin + 0.2f);
     glPopMatrix();
-
     glColor4f(0.4f, 0.9f, 1.0f, 0.7f * pulseIntensity);
     glPushMatrix();
         glTranslatef(upgraderX, baseY + baseHeight/2 + beamHeight/2, (beltZMin + beltZMax)/2);
         drawTexturedCube(beamWidth * 0.5f, beamHeight * 0.7f, (beltZMax - beltZMin) * 0.8f);
     glPopMatrix();
-
     glEnable(GL_LIGHTING);
     glDisable(GL_BLEND);
 }
 
 //------------------- Draws Kiln ---------------------------
 void drawKiln() {
-    // Define constants for the kiln dimensions
-    float kilnBaseX = -20.f;       // X-coordinate of the kiln's base
-    float kilnBaseY = 0.f;         // Y-coordinate of the kiln's base (floor level)
-    float kilnBaseZ = -4.f;        // Z-coordinate of the kiln's base
-    const float kilnWidth  = 4.0f;   // Width of the kiln body
-    const float kilnHeight = 6.0f;   // Height of the kiln body
-    const float kilnDepth  = 4.0f;   // Depth of the kiln body
-
-    // Define dimensions for the door on the kiln
+    float kilnBaseX = -20.f;
+    float kilnBaseY = 0.f;
+    float kilnBaseZ = -4.f;
+    const float kilnWidth  = 4.0f;
+    const float kilnHeight = 6.0f;
+    const float kilnDepth  = 4.0f;
     const float doorWidth  = 2.0f;
     const float doorHeight = 5.5f;
-
     float angle = 90.f;
-
-    glBindTexture(GL_TEXTURE_2D, brickTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(brickTex);
     setCustomColor(0.8f, 0.3f, 0.3f);
-
     glPushMatrix();
         glTranslatef(kilnBaseX, kilnBaseY + kilnHeight / 2.0f, kilnBaseZ);
         glRotatef(angle, 0.0f, 1.0f, 0.0f);
         drawTexturedCube(kilnWidth, kilnHeight, kilnDepth);
     glPopMatrix();
-
     glPushMatrix();
         glTranslatef(kilnBaseX, kilnBaseY, kilnBaseZ);
         glRotatef(angle, 0.0f, 1.0f, 0.0f);
         glTranslatef(0.0f, kilnHeight / 4.0f, kilnDepth / 2.0f + 0.01f);
         setCustomColor(0.2f, 0.2f, 0.2f);
         glScalef(doorWidth, doorHeight, 0.1f);
-        glutSolidCube(1.0f); // Keeping the door drawn with glutSolidCube for simplicity.
+        glutSolidCube(1.0f);
     glPopMatrix();
-
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 //------------------- Draws Packer ---------------------------
 void drawPacker() {
-    // Define constants for the kiln dimensions
-    float packerBaseX = 24.f;       // X-coordinate of the kiln's base
-    float packerBaseY = 0.f;         // Y-coordinate of the kiln's base (floor level)
-    float packerBaseZ = -4.f;        // Z-coordinate of the kiln's base
-    const float packerWidth  = 8.0f;   // Width of the kiln body
-    const float packerHeight = 6.0f;   // Height of the kiln body
-    const float packerDepth  = 9.0f;   // Depth of the kiln body
-
-    // Define dimensions for the door on the kiln
+    float packerBaseX = 24.f;
+    float packerBaseY = 0.f;
+    float packerBaseZ = -4.f;
+    const float packerWidth  = 8.0f;
+    const float packerHeight = 6.0f;
+    const float packerDepth  = 9.0f;
     const float doorWidth  = 2.0f;
     const float doorHeight = 5.5f;
-
     float angle = -90.f;
-
-    glBindTexture(GL_TEXTURE_2D, metalWallTex);
-    glEnable(GL_TEXTURE_2D);
+    bindTextureIfNeeded(metalWallTex);
     setCustomColor(0.2f, 0.8f, 0.5f);
-
     glPushMatrix();
-    glTranslatef(packerBaseX, packerBaseY + packerHeight / 2.0f, packerBaseZ);
-    glRotatef(angle, 0.0f, 1.0f, 0.0f);
-    drawTexturedCube(packerWidth, packerHeight, packerDepth);
+        glTranslatef(packerBaseX, packerBaseY + packerHeight / 2.0f, packerBaseZ);
+        glRotatef(angle, 0.0f, 1.0f, 0.0f);
+        drawTexturedCube(packerWidth, packerHeight, packerDepth);
     glPopMatrix();
-
     glPushMatrix();
-    glTranslatef(packerBaseX, packerBaseY, packerBaseZ);
-    glRotatef(angle, 0.0f, 1.0f, 0.0f);
-    glTranslatef(0.0f, packerHeight / 4.0f, packerDepth / 2.0f + 0.01f);
-    setCustomColor(0.2f, 0.2f, 0.2f);
-    glScalef(doorWidth, doorHeight, 0.1f);
-    glutSolidCube(1.0f); // Keeping the door drawn with glutSolidCube for simplicity.
+        glTranslatef(packerBaseX, packerBaseY, packerBaseZ);
+        glRotatef(angle, 0.0f, 1.0f, 0.0f);
+        glTranslatef(0.0f, packerHeight / 4.0f, packerDepth / 2.0f + 0.01f);
+        setCustomColor(0.2f, 0.2f, 0.2f);
+        glScalef(doorWidth, doorHeight, 0.1f);
+        glutSolidCube(1.0f);
     glPopMatrix();
-
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
-
-
 
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
-
     glGenTextures(1, &floorTex);
     glBindTexture(GL_TEXTURE_2D, floorTex);
     loadTGA("concrete.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &beltTex);
     glBindTexture(GL_TEXTURE_2D, beltTex);
     loadTGA("concrete.tga");
@@ -898,7 +817,6 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &metalTex);
     glBindTexture(GL_TEXTURE_2D, metalTex);
     loadTGA("metal.tga");
@@ -907,7 +825,6 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &metalPlateTex);
     glBindTexture(GL_TEXTURE_2D, metalPlateTex);
     loadTGA("metalPlate.tga");
@@ -916,14 +833,12 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &brickTex);
     glBindTexture(GL_TEXTURE_2D, brickTex);
     loadTGA("brick.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glGenTextures(1, &metalWallTex);
     glBindTexture(GL_TEXTURE_2D, metalWallTex);
     loadTGA("metalWall.tga");
@@ -932,128 +847,103 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-    // --- SKYBOX: Load the 6 skybox textures ---
     glGenTextures(6, skyboxTex);
-
-    // Left face (negx.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[0]);
     loadTGA("negx.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Bottom face (negy.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[1]);
     loadTGA("negy.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Front face (negz.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[2]);
     loadTGA("negz.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Right face (posx.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[3]);
     loadTGA("posx.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Top face (posy.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
     loadTGA("posy.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Back face (posz.tga)
     glBindTexture(GL_TEXTURE_2D, skyboxTex[5]);
     loadTGA("posz.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
 }
 
-// ------------------- Draw the Skybox ---------------------------
+//------------------- Draw the Skybox ---------------------------
 void drawSkybox() {
     float size = 500.0f;
     float halfSize = size / 2.0f;
-
     glEnable(GL_TEXTURE_2D);
-
-    // Left face (x = -halfSize) using negx.tga
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[0]);
+    bindTextureIfNeeded(skyboxTex[0]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-halfSize, halfSize, halfSize);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
     glEnd();
-
-    // Bottom face (y = -halfSize) using negy.tga
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[1]);
+    disableTextureIfNeeded();
+    bindTextureIfNeeded(skyboxTex[1]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, -halfSize, -halfSize);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
     glEnd();
-
-    // Front face (z = -halfSize) using negz.tga
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[2]);
+    disableTextureIfNeeded();
+    bindTextureIfNeeded(skyboxTex[2]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
-
-    // Right face (x = halfSize) using posx.tga - HORIZONTALLY FLIPPED
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[3]);
+    disableTextureIfNeeded();
+    bindTextureIfNeeded(skyboxTex[3]);
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
-
-    // Top face (y = halfSize) using posy.tga
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
+    disableTextureIfNeeded();
+    bindTextureIfNeeded(skyboxTex[4]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, halfSize, halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, halfSize, halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
-
-    // Back face (z = halfSize) using posz.tga
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[5]);
+    disableTextureIfNeeded();
+    bindTextureIfNeeded(skyboxTex[5]);
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, halfSize);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, halfSize);
     glEnd();
-
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
 
 //------------------- Draw Textured Floor ---------------------------
 void drawTexturedFloor() {
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, floorTex);
+    bindTextureIfNeeded(floorTex);
     setCustomColor(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-50.0f, 0.0f, -50.0f);
@@ -1061,9 +951,8 @@ void drawTexturedFloor() {
         glTexCoord2f(1.0f, 1.0f); glVertex3f( 50.0f, 0.0f,  50.0f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 50.0f, 0.0f, -50.0f);
     glEnd();
-    glDisable(GL_TEXTURE_2D);
+    disableTextureIfNeeded();
 }
-
 
 //------------------- Display Callback ---------------------------
 void display() {
@@ -1080,8 +969,6 @@ void display() {
               keyboardUtil.getPosY() + lookDirY,
               keyboardUtil.getPosZ() + lookDirZ,
               0.0, 1.0, 0.0);
-
-    // --- SKYBOX: Draw the skybox so it always surrounds the camera ---
     glPushMatrix();
         float m[16];
         glGetFloatv(GL_MODELVIEW_MATRIX, m);
@@ -1091,7 +978,6 @@ void display() {
         drawSkybox();
         glDepthMask(GL_TRUE);
     glPopMatrix();
-
     glLightfv(GL_LIGHT0, GL_POSITION, globalLightPosition);
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
@@ -1136,12 +1022,15 @@ void display() {
         drawSilos();
         drawKiln();
         drawPacker();
+        drawUpgrader(3.0f);
+        drawUpgrader(4.0f);
+        drawUpgrader(5.0f);
         for (int i = 0; i < numItems; i++) {
             float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
             drawProcessedItem(itemOffset);
         }
         isShadowPass = false;
-        drawUpgrader(3.0f);
+
     glPopMatrix();
     glPopAttrib();
     glutSwapBuffers();
@@ -1186,7 +1075,6 @@ void initialize() {
     glEnable(GL_TEXTURE_2D);
     loadTextures();
     glEnable(GL_NORMALIZE);
-
     glLightfv(GL_LIGHT0, GL_AMBIENT, globalLightAmbient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, globalLightDiffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, globalLightSpecular);
@@ -1194,7 +1082,6 @@ void initialize() {
     glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiffuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
     glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-5., 5., -5., 5., 5., 1000.);
