@@ -1384,7 +1384,12 @@ void display() {
         m[12] = m[13] = m[14] = 0.0f;
         glLoadMatrixf(m);
         glDepthMask(GL_FALSE);
+        glDisable(GL_LIGHTING);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         drawSkybox();
+        if (!wireframeMode) {
+            glEnable(GL_LIGHTING);
+        }
         glDepthMask(GL_TRUE);
     glPopMatrix();
     if (!wireframeMode) {
