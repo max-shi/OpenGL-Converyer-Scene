@@ -1397,9 +1397,6 @@ void display() {
     }
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
-    if (!wireframeMode) {
-        glEnable(GL_LIGHTING);
-    }
     drawSupportStructure();
     drawRollers();
     drawPressDevice();
