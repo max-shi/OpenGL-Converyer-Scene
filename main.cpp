@@ -25,7 +25,7 @@ GLfloat matShininess[] = {50.0f};
 bool isShadowPass = false;
 void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
     if(isShadowPass)
-        glColor3f(0.2f, 0.2f, 0.2f);
+        glColor3f(0.1f, 0.1f, 0.1f);
     else
         glColor3f(r, g, b);
 }
