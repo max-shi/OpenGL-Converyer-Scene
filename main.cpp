@@ -194,6 +194,16 @@ GLuint BRICK_TEX;
 GLuint METAL_WALL_TEX;
 GLuint SKYBOX_TEX[6];
 
+/**
+ * @brief Sets the drawing color based on shadow pass state.
+ *
+ * If currently in shadow rendering pass (isShadowPass is true), sets the color to a dark shade.
+ * Otherwise, sets the color to the provided r, g, b values.
+ *
+ * @param r Red component of the color.
+ * @param g Green component of the color.
+ * @param b Blue component of the color.
+ */
 void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
     if(isShadowPass)
         glColor3f(0.1f, 0.1f, 0.1f);
@@ -201,6 +211,16 @@ void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
         glColor3f(r, g, b);
 }
 
+/**
+ * @brief Computes a shadow projection matrix.
+ *
+ * Calculates the shadow matrix given a ground plane equation and a light position.
+ * This matrix can be used to project geometry onto the ground plane to simulate shadows.
+ *
+ * @param shadowMat A 4x4 matrix to store the computed shadow matrix.
+ * @param groundPlane An array of 4 floats representing the ground plane coefficients.
+ * @param lightPos An array of 4 floats representing the position of the light source.
+ */
 void computeShadowMatrix(GLfloat shadowMat[4][4], GLfloat groundPlane[4], GLfloat lightPos[4]) {
     GLfloat dot = groundPlane[0]*lightPos[0] +
                   groundPlane[1]*lightPos[1] +
@@ -224,7 +244,13 @@ void computeShadowMatrix(GLfloat shadowMat[4][4], GLfloat groundPlane[4], GLfloa
     shadowMat[3][3] = dot - lightPos[3] * groundPlane[3];
 }
 
-// Helper functions for conditional texture binding
+/**
+ * @brief Binds a texture if not in shadow pass.
+ *
+ * If the current rendering pass is not a shadow pass, binds the specified texture and enables texture mapping.
+ *
+ * @param tex OpenGL texture identifier to bind.
+ */
 void bindTextureIfNeeded(GLuint tex) {
     if (!isShadowPass) {
         glBindTexture(GL_TEXTURE_2D, tex);
@@ -232,20 +258,38 @@ void bindTextureIfNeeded(GLuint tex) {
     }
 }
 
+/**
+ * @brief Disables texture mapping if not in shadow pass.
+ *
+ * Disables 2D texture mapping, ensuring it is not applied during non-shadow passes.
+ */
 void disableTextureIfNeeded() {
     if (!isShadowPass) {
         glDisable(GL_TEXTURE_2D);
     }
 }
 
-//------------------- Initialize Particle System ----------------------
+/**
+ * @brief Initializes the particle system.
+ *
+ * Iterates over the particle array and deactivates all particles, preparing the system for use.
+ */
 void initParticleSystem() {
     for (int i = 0; i < MAX_PARTICLES; i++) {
         particles[i].active = false;
     }
 }
 
-//------------------- Create New Particle ----------------------------
+/**
+ * @brief Creates a new particle at the specified origin.
+ *
+ * Iterates through a subset of particles (first quarter of MAX_PARTICLES) and activates the first inactive particle,
+ * initializing its position, velocity, color, lifetime, and scale with random variations.
+ *
+ * @param originX X coordinate of the particle origin.
+ * @param originY Y coordinate of the particle origin.
+ * @param originZ Z coordinate of the particle origin.
+ */
 void createParticle(float originX, float originY, float originZ) {
     for (int i = 0; i < MAX_PARTICLES/4; i++) {
         if (!particles[i].active) {
@@ -269,7 +313,16 @@ void createParticle(float originX, float originY, float originZ) {
     }
 }
 
-//------------------- Create New Fire Particle ----------------------------
+/**
+ * @brief Creates a new fire particle with altered properties.
+ *
+ * Finds the first inactive particle in the particle array and initializes it with position, random velocity,
+ * orange-reddish color, lifetime, and scale appropriate for fire effects.
+ *
+ * @param originX X coordinate of the fire particle's origin.
+ * @param originY Y coordinate of the fire particle's origin.
+ * @param originZ Z coordinate of the fire particle's origin.
+ */
 void createFireParticle(float originX, float originY, float originZ) {
     for (int i = 0; i < MAX_PARTICLES; i++) {
         if (!particles[i].active) {
@@ -294,8 +347,18 @@ void createFireParticle(float originX, float originY, float originZ) {
     }
 }
 
-
-//------------------- Update Particles ------------------------------
+/**
+ * @brief Updates all active particles.
+ *
+ * Iterates over all particles, updating their positions based on their velocities and applying gravity.
+ * Handles collision with the floor or conveyor floor, including bounce damping.
+ *
+ * Also decreases the lifetime of particles, deactivating them when their lifetime expires.
+ * Additionally, if spark generation is enabled, emits new particles at a defined emission rate.
+ * For fire particles, if fire blaster is active, emits fire particles at a specified emission rate from random positions.
+ *
+ * @param deltaTime Time elapsed since the last update (in seconds).
+ */
 void updateParticles(float deltaTime) {
     for (int i = 0; i < MAX_PARTICLES; i++) {
         if (particles[i].active) {
@@ -338,8 +401,14 @@ void updateParticles(float deltaTime) {
     }
 }
 
-
-//------------------- Draw Particles --------------------------------
+/**
+ * @brief Renders all active particles.
+ *
+ * Disables lighting and depth writing, and enables blending and point sprite rendering.
+ * Iterates over all active particles, setting their color and size based on remaining lifetime,
+ * and draws them as points.
+ * Restores state after drawing.
+ */
 void drawParticles() {
     glDisable(GL_LIGHTING);
     glDepthMask(GL_FALSE);
@@ -369,6 +438,12 @@ void drawParticles() {
     glEnable(GL_LIGHTING);
 }
 
+/**
+ * @brief Checks and triggers spark particle generation.
+ *
+ * Iterates through processed items on the conveyor belt.
+ * If an item is within a certain region near the center (between -0.5 and 0.5 on the x-axis), enables spark generation.
+ */
 void displayParticleCheck() {
     sparkGeneration = false;
     for (int i = 0; i < NUM_ITEMS; i++) {
@@ -381,7 +456,16 @@ void displayParticleCheck() {
     }
 }
 
-//------------------- Draw Textured Cube ---------------------------
+/**
+ * @brief Draws a cube with textured faces.
+ *
+ * Renders a cube centered at the origin with the specified width, height, and depth.
+ * Each face of the cube is defined with appropriate normals and texture coordinates.
+ *
+ * @param width The width of the cube.
+ * @param height The height of the cube.
+ * @param depth The depth of the cube.
+ */
 void drawTexturedCube(float width, float height, float depth) {
     float hw = width / 2.0f;
     float hh = height / 2.0f;
@@ -430,7 +514,16 @@ void drawTexturedCube(float width, float height, float depth) {
     glEnd();
 }
 
-//------------------- Update Scene (Belt, Rollers & Camera) -------------------------
+/**
+ * @brief Updates the scene state for animation.
+ *
+ * Calculates the time elapsed since the last update to advance the simulation.
+ * Updates the conveyor belt's offset and the rollers' rotation based on the belt speed.
+ * Processes keyboard input, updates particle generation and movement, and schedules the next update.
+ * Finally, requests the display to be redrawn.
+ *
+ * @param value Unused parameter, typically used by GLUT timer functions.
+ */
 void updateScene(int value) {
     static float lastTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
@@ -447,7 +540,14 @@ void updateScene(int value) {
     glutTimerFunc(16, updateScene, 0);
 }
 
-//------------------- Draw an Individual Roller ---------------------------
+/**
+ * @brief Draws an individual roller at a specified x-position.
+ *
+ * Positions the roller, applies rotation based on the rollerRotation global,
+ * binds the floor texture, and uses a GLU quadric to render the cylinder and end disks.
+ *
+ * @param xPos The x-coordinate where the roller should be drawn.
+ */
 void drawRoller(float xPos) {
     glPushMatrix();
         glTranslatef(xPos, ROLLER_Y_CENTER, ROLLER_Z_CENTER);
@@ -472,7 +572,12 @@ void drawRoller(float xPos) {
     glPopMatrix();
 }
 
-//------------------- Draw Rollers ---------------------------
+/**
+ * @brief Draws all rollers on the conveyor belt.
+ *
+ * Iterates over the number of rollers, computing their x-positions based on the spacing,
+ * and calls drawRoller() to render each roller.
+ */
 void drawRollers() {
     for (int i = 0; i < NUM_ROLLERS; i++) {
         float xPos = -20.0f + i * ROLLER_SPACING;
@@ -480,8 +585,13 @@ void drawRollers() {
     }
 }
 
-
-//------------------- Draw the Overhead Bar and Supports ---------------------------
+/**
+ * @brief Draws the overhead spring bar and its support structures.
+ *
+ * Uses the metal texture to draw the horizontal bar and the side vertical supports at the given z-position.
+ *
+ * @param zPosition The z-coordinate where the spring bars are drawn.
+ */
 void drawSpringBars(float zPosition) {
     bindTextureIfNeeded(METAL_TEX);
     setCustomColor(0.7f, 0.7f, 0.7f);
@@ -499,7 +609,20 @@ void drawSpringBars(float zPosition) {
     glPopMatrix();
     disableTextureIfNeeded();
 }
-//------------------- Draw a Single Spring ---------------------------
+
+/**
+ * @brief Draws a spring with animated height.
+ *
+ * Calculates the current height of the spring based on a sine function influenced by the belt offset and a time offset.
+ * Renders the base, coils, and top cap of the spring using GLU quadrics and custom drawing methods.
+ * The spring's geometry includes a base disk, cylinder, and a triangle strip to form the coiled spring.
+ *
+ * @param x The x-coordinate for the spring's location.
+ * @param z The z-coordinate for the spring's location.
+ * @param timeOffset An offset applied to the sine function to vary animation.
+ * @param maxHeight The maximum height the spring can achieve.
+ * @param minHeight The minimum height of the spring.
+ */
 void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHeight) {
     float currentHeight = (minHeight + (maxHeight - minHeight) * (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset))) * 2;
     bindTextureIfNeeded(METAL_TEX);
@@ -542,6 +665,12 @@ void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHe
     disableTextureIfNeeded();
 }
 
+/**
+ * @brief Draws background springs and their supporting spring bars.
+ *
+ * Calls drawSpringBars() to draw the overhead bar, and multiple calls to drawSpring() with different parameters
+ * to create an array of springs in the background.
+ */
 void drawBackgroundSprings() {
     drawSpringBars(-20.0f);
     drawSpring(-7.5f, -20.0f, 0.0f, 6.f, 2.0f);
@@ -551,6 +680,13 @@ void drawBackgroundSprings() {
     drawSpring(-10.0f, -20.0f, -2.2f, 6.f, 2.5f);
 }
 
+/**
+ * @brief Draws the conveyor belt.
+ *
+ * Binds the belt texture and renders multiple quads to simulate the belt surface,
+ * including the top and bottom surfaces and additional details along the sides.
+ * Uses the normalized offset to create a scrolling texture effect.
+ */
 void drawConveyorBelt() {
     bindTextureIfNeeded(BELT_TEX);
     setCustomColor(0.9f, 0.9f, 0.9f);
@@ -581,6 +717,16 @@ void drawConveyorBelt() {
     disableTextureIfNeeded();
 }
 
+/**
+ * @brief Draws a processed item on the conveyor belt.
+ *
+ * Translates the drawing context to the item's world position based on the provided offset.
+ * Depending on the x-position of the item, renders it as either an ingot with varying scale, color, and emissive properties,
+ * or as a twisted cylindrical shape with a gradual twist applied based on its progression along the belt.
+ * Uses different OpenGL primitives such as quads, quad strips, and triangle fans to form the shape.
+ *
+ * @param offset The positional offset along the conveyor belt for the processed item.
+ */
 void drawProcessedItem(float offset) {
     glPushMatrix();
         float worldX = -20.0f + offset;
@@ -695,6 +841,13 @@ void drawProcessedItem(float offset) {
     glPopMatrix();
 }
 
+/**
+ * @brief Draws the support structure for the assembly line.
+ *
+ * Uses the metal plate texture to render vertical support legs, horizontal beams, and diagonal braces.
+ * The function positions multiple cubes to form the support layout on both sides of the conveyor belt,
+ * as well as additional cross-bracing at the top.
+ */
 void drawSupportStructure() {
     bindTextureIfNeeded(METAL_PLATE_TEX);
     setCustomColor(1.f, 1.f, 1.f);
@@ -773,8 +926,13 @@ void drawSupportStructure() {
     disableTextureIfNeeded();
 }
 
-
-//------------------- Draw Press Device ---------------------------
+/**
+ * @brief Draws the press device used in the assembly line.
+ *
+ * Renders the base, arms, and piston of the press device using textured cubes and GLU quadrics.
+ * The press position is animated with a sine function to simulate the pressing motion.
+ * Additionally, renders a sphere to indicate a state-dependent visual cue on the press.
+ */
 void drawPressDevice() {
     float pressCycle = fmod(beltOffset * (2.0f * M_PI / 5.0f), 2.0f * M_PI);
     float pressPosition = 0.5f * sin(pressCycle + 0.6);
@@ -822,7 +980,15 @@ void drawPressDevice() {
     glPopMatrix();
 }
 
-//------------------- Draw Silo ---------------------------
+/**
+ * @brief Draws a single silo structure.
+ *
+ * Uses the metal plate texture to render a cylindrical silo with a roof formed by a tapering cylinder.
+ * Adds a pipe at the top for additional detail, and draws a base platform for the silo.
+ *
+ * @param x The x-coordinate where the silo is placed.
+ * @param z The z-coordinate where the silo is placed.
+ */
 void drawSilo(float x, float z) {
     bindTextureIfNeeded(METAL_PLATE_TEX);
     setCustomColor(0.85f, 0.85f, 0.85f);
@@ -860,7 +1026,12 @@ void drawSilo(float x, float z) {
     glPopMatrix();
 }
 
-//------------------- Draw All Silos ---------------------------
+/**
+ * @brief Draws multiple silos in a row.
+ *
+ * Iterates over a fixed number of silos, calculating the x-position for each and calling drawSilo() to render them.
+ * The silos are positioned at a constant z-coordinate.
+ */
 void drawSilos() {
     float startX = 15.0f;
     float z = -20.0f;
@@ -871,7 +1042,14 @@ void drawSilos() {
     }
 }
 
-//------------------- Draw Upgrader ---------------------------
+/**
+ * @brief Draws an upgrader unit.
+ *
+ * Renders the base and arm of the upgrader using textured cubes.
+ * The upgrader is positioned at the specified x-coordinate.
+ *
+ * @param upgraderX The x-coordinate where the upgrader is drawn.
+ */
 void drawUpgrader(float upgraderX) {
     bindTextureIfNeeded(FLOOR_TEX);
     setCustomColor(0.7f, 0.7f, 0.7f);
@@ -886,7 +1064,20 @@ void drawUpgrader(float upgraderX) {
     disableTextureIfNeeded();
 }
 
-//------------------- Draw Upgrader Beam ---------------------------
+/**
+ * @brief Draws the upgrader beam with pulsing effect.
+ *
+ * Enables blending to create a translucent effect and disables lighting temporarily.
+ * Calculates a pulse intensity based on the belt offset and a provided offset amount.
+ * Renders two overlapping cubes to form the beam with a pulsing color and translucency.
+ * Restores lighting and disables blending after drawing.
+ *
+ * @param upgraderX The x-coordinate where the beam is drawn.
+ * @param a Red component for the beam's color.
+ * @param b Green component for the beam's color.
+ * @param c Blue component for the beam's color.
+ * @param offsetAmount A phase offset applied to the pulsing animation.
+ */
 void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float offsetAmount) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -906,7 +1097,12 @@ void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float of
     glDisable(GL_BLEND);
 }
 
-//------------------- Draw Fire Blaster ---------------------------
+/**
+ * @brief Draws the fire blaster unit.
+ *
+ * Renders a crane-like structure consisting of left and right crane arms, a connecting beam, and a central fire blaster unit.
+ * Uses textured cubes with metal texture to represent the mechanical components.
+ */
 void drawFireBlaster() {
     // Draw the left crane arm
     bindTextureIfNeeded(METAL_TEX);
@@ -937,7 +1133,12 @@ void drawFireBlaster() {
     disableTextureIfNeeded();
 }
 
-//------------------- Draws Kiln ---------------------------
+/**
+ * @brief Draws the kiln component.
+ *
+ * Renders the main kiln body using brick texture, rotating it as specified.
+ * Additionally, draws a door on the kiln with a darkened color to simulate a door panel.
+ */
 void drawKiln() {
     bindTextureIfNeeded(BRICK_TEX);
     setCustomColor(0.8f, 0.3f, 0.3f);
@@ -957,7 +1158,12 @@ void drawKiln() {
     disableTextureIfNeeded();
 }
 
-//------------------- Draws Packer ---------------------------
+/**
+ * @brief Draws the packer component.
+ *
+ * Renders the packer's main body using a metal wall texture and rotates it appropriately.
+ * Also draws a door on the packer with a contrasting color to represent the door panel.
+ */
 void drawPacker() {
     bindTextureIfNeeded(METAL_WALL_TEX);
     setCustomColor(0.2f, 0.8f, 0.5f);
@@ -977,7 +1183,12 @@ void drawPacker() {
     disableTextureIfNeeded();
 }
 
-//------------------- Loads Textures ---------------------------
+/**
+ * @brief Loads and sets up all textures used in the simulation.
+ *
+ * Generates texture IDs and loads various TGA texture files including concrete, metal, metal plates, bricks, metal walls, and skybox textures.
+ * Sets texture parameters such as filtering, wrapping modes, and texture environment mode for each texture.
+ */
 void loadTextures() {
     glGenTextures(1, &FLOOR_TEX);
     glBindTexture(GL_TEXTURE_2D, FLOOR_TEX);
@@ -1062,7 +1273,12 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-//------------------- Draw the Skybox ---------------------------
+/**
+ * @brief Draws the skybox surrounding the scene.
+ *
+ * Renders six textured quads corresponding to each face of the skybox (negative/positive x, y, z).
+ * Each face uses a different texture from the SKYBOX_TEX array to create a seamless environment.
+ */
 void drawSkybox() {
     float size = 500.0f;
     float halfSize = size / 2.0f;
@@ -1117,7 +1333,11 @@ void drawSkybox() {
     disableTextureIfNeeded();
 }
 
-//------------------- Draw Textured Floor ---------------------------
+/**
+ * @brief Draws the textured floor of the scene.
+ *
+ * Binds the floor texture and renders a large quad representing the floor, with appropriate texture coordinates.
+ */
 void drawTexturedFloor() {
     bindTextureIfNeeded(FLOOR_TEX);
     setCustomColor(1.0f, 1.0f, 1.0f);
@@ -1130,7 +1350,15 @@ void drawTexturedFloor() {
     disableTextureIfNeeded();
 }
 
-//------------------- Display Callback ---------------------------
+/**
+ * @brief GLUT display callback function.
+ *
+ * Clears the buffers and sets up the modelview matrix based on the camera position and orientation.
+ * Renders the skybox, floor, support structure, rollers, press device, springs, conveyor belt, silos, kiln, packer, processed items, fire blaster,
+ * particle effects, and upgrader units along with their beams.
+ * Additionally, computes and renders the shadows by applying a shadow projection matrix.
+ * Finally, swaps the buffers to display the rendered scene.
+ */
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -1222,7 +1450,16 @@ void display() {
     glutSwapBuffers();
 }
 
-//------------------- Keyboard and Special Key Callbacks ---------------------------
+/**
+ * @brief Keyboard callback for key press events.
+ *
+ * Processes keyboard input, updates the state in KeyboardUtilities, and adjusts simulation parameters such as belt speed and wireframe mode.
+ * Specific keys increase/decrease the belt speed, reverse the belt, toggle wireframe mode, or exit the application.
+ *
+ * @param key The ASCII code of the pressed key.
+ * @param x The x-coordinate of the mouse when the key was pressed.
+ * @param y The y-coordinate of the mouse when the key was pressed.
+ */
 void keyboardDownCallback(unsigned char key, int x, int y) {
     keyboardUtil.keyboardDown(key);
     if (key == '+' || key == '=') {
@@ -1243,19 +1480,51 @@ void keyboardDownCallback(unsigned char key, int x, int y) {
     else if (key == 27) exit(0);
 }
 
+/**
+ * @brief Keyboard callback for key release events.
+ *
+ * Informs the KeyboardUtilities that a key has been released.
+ *
+ * @param key The ASCII code of the released key.
+ * @param x The x-coordinate of the mouse when the key was released.
+ * @param y The y-coordinate of the mouse when the key was released.
+ */
 void keyboardUpCallback(unsigned char key, int x, int y) {
     keyboardUtil.keyboardUp(key);
 }
 
+/**
+ * @brief Callback for special key press events.
+ *
+ * Passes special key press events (like arrow keys) to the KeyboardUtilities for handling.
+ *
+ * @param key The GLUT key code for the special key.
+ * @param x The x-coordinate of the mouse when the key was pressed.
+ * @param y The y-coordinate of the mouse when the key was pressed.
+ */
 void specialKeyDownCallback(int key, int x, int y) {
     keyboardUtil.specialKeyDown(key);
 }
 
+/**
+ * @brief Callback for special key release events.
+ *
+ * Passes special key release events to the KeyboardUtilities.
+ *
+ * @param key The GLUT key code for the released special key.
+ * @param x The x-coordinate of the mouse when the key was released.
+ * @param y The y-coordinate of the mouse when the key was released.
+ */
 void specialKeyUpCallback(int key, int x, int y) {
     keyboardUtil.specialKeyUp(key);
 }
 
-//------------------- OpenGL Initialization ---------------------------
+/**
+ * @brief Initializes OpenGL state and projection.
+ *
+ * Sets the clear color, enables lighting, depth testing, texture mapping, and other relevant OpenGL features.
+ * Loads textures and sets up the projection matrix using glFrustum for a perspective view.
+ */
 void initialize() {
     glClearColor(1., 1., 1., 1.);
     glEnable(GL_LIGHTING);
@@ -1277,7 +1546,17 @@ void initialize() {
     glFrustum(-5., 5., -5., 5., 5., 1000.);
 }
 
-//------------------- Main Function ---------------------------
+/**
+ * @brief Main entry point of the assembly line simulation application.
+ *
+ * Initializes GLUT, sets display mode, window size, and position. Creates the window,
+ * calls initialization routines, sets up callbacks for display, keyboard, and timer events,
+ * and enters the GLUT main loop to start the simulation.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line argument strings.
+ * @return int Exit status code.
+ */
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
