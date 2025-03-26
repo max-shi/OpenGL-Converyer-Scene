@@ -1290,9 +1290,9 @@ void initialize() {
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(1000, 1000);
+    glutInitWindowSize(900, 900);
     glutInitWindowPosition(10, 10);
-    glutCreateWindow("Industrial Conveyor Belt Simulation");
+    glutCreateWindow("Assembly line simulation - COSC363");
     initialize();
     initParticleSystem();
     glutDisplayFunc(display);
