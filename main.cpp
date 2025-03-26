@@ -1385,7 +1385,7 @@ void display() {
         glLoadMatrixf(m);
         glDepthMask(GL_FALSE);
         glDisable(GL_LIGHTING);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
         drawSkybox();
         if (!wireframeMode) {
             glEnable(GL_LIGHTING);
