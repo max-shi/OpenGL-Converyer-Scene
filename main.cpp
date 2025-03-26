@@ -516,36 +516,22 @@ void drawProcessedItem(float offset) {
         float worldX = -20.0f + offset;
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
         if (worldX < 0.0f) {
-            // This is our transformation zone (x = -20 to x = 0)
-            // Calculate progress along the transformation (0.0 to 1.0)
             float progress = (worldX + 20.0f) / 20.0f;
-
-            // Scale the cube - decreasing in size as it moves
             float scaleFactor = 1.0f - 0.25f * progress;
             glScalef(scaleFactor, scaleFactor, scaleFactor);
-
-            // Color transition from bright orange to yellow
-            float r = 1.0f;                       // Red stays at 1.0
-            float g = 0.1f + (0.5f * progress);   // Green increases from 0.3 to 1.0
-            float b = 0.0f;                       // Blue stays at 0.0
-
+            float r = 1.0f;
+            float g = 0.1f + (0.5f * progress);
+            float b = 0.0f;
             setCustomColor(r, g, b);
-
-            // Draw the ingot shape instead of a cube
             float ingotWidth = 1.0f;
             float ingotHeight = 0.5f;
             float ingotDepth = 0.7f;
-
-            // Add emissive lighting that decreases with progress
             if (!isShadowPass) {
-                float emissiveStrength = 1.0f - (0.8f * progress); // Decreases as progress increases
+                float emissiveStrength = 1.0f - (0.8f * progress);
                 GLfloat emissiveColor[] = {r * emissiveStrength, g * emissiveStrength, 0.0f, 1.0f};
                 glMaterialfv(GL_FRONT, GL_EMISSION, emissiveColor);
             }
-
-            // Draw the ingot (trapezoidal prism with flat top/bottom)
             glBegin(GL_QUADS);
-                // Bottom face
                 glNormal3f(0.0f, -1.0f, 0.0f);
                 glVertex3f(-ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
                 glVertex3f(ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
@@ -885,12 +871,6 @@ void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float of
     glEnable(GL_LIGHTING);
     glDisable(GL_BLEND);
 }
-// bool fireBlasterActive = true;  // Always active
-// float fireBlasterX = -10.0f;    // X position
-// float fireBlasterMinX = -15.0f; // Left extent
-// float fireBlasterMaxX = -5.0f;  // Right extent
-// float fireBlasterEmissionRate = 0.0005f; // Emission rate
-// float fireBlasterTimeSinceLastEmission = 0.0f;
 
 //------------------- Draw Fire Blaster ---------------------------
 void drawFireBlaster() {
