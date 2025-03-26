@@ -301,13 +301,13 @@ void updateParticles(float deltaTime) {
             particles[i].y += particles[i].vy * deltaTime;
             particles[i].z += particles[i].vz * deltaTime;
             particles[i].vy += SPARK_GRAVITY * deltaTime;
-            // float currentFloorY = DEFAULT_FLOOR_Y;
-            // if (particles[i].x >= CONVEYOR_X_MIN && particles[i].x <= CONVEYOR_X_MAX &&
-            //     particles[i].z >= CONVEYOR_Z_MIN && particles[i].z <= CONVEYOR_Z_MAX) {
-            //     currentFloorY = CONVEYOR_FLOOR_Y;
-            // }
-            if (particles[i].y <= DEFAULT_FLOOR_Y && particles[i].vy < 0) {
-                particles[i].y = DEFAULT_FLOOR_Y;
+            float currentFloorY = DEFAULT_FLOOR_Y;
+            if (particles[i].x >= CONVEYOR_X_MIN && particles[i].x <= CONVEYOR_X_MAX &&
+                particles[i].z >= CONVEYOR_Z_MIN && particles[i].z <= CONVEYOR_Z_MAX) {
+                currentFloorY = CONVEYOR_FLOOR_Y;
+            }
+            if (particles[i].y <= currentFloorY && particles[i].vy < 0) {
+                particles[i].y = currentFloorY;
                 particles[i].vy = -particles[i].vy * BOUNCE_DAMPING;
                 particles[i].vx *= 0.9f;
                 particles[i].vz *= 0.9f;
