@@ -132,7 +132,18 @@ const float KILN_HEIGHT = 6.0f;
 const float KILN_DEPTH  = 4.0f;
 const float KILN_DOOR_WIDTH  = 2.0f;
 const float KILN_DOOR_HEIGHT = 5.5f;
-float KILN_ROTATE_ANGLE = 90.f;
+const float KILN_ROTATE_ANGLE = 90.f;
+
+// Packer Variables
+const float PACKER_BASE_X = 24.f;
+const float PACKER_BASE_Y = 0.f;
+const float PACKER_BASE_Z = -4.f;
+const float PACKER_WIDTH  = 8.0f;
+const float PACKER_HEIGHT = 6.0f;
+const float PACKER_DEPTH  = 9.0f;
+const float PACKER_DOOR_WIDTH  = 2.0f;
+const float PACKER_DOOR_HEIGHT = 5.5f;
+const float PACKER_ROTATE_ANGLE = -90.f;
 
 // Particle Variables
 const int MAX_PARTICLES = 2000;
@@ -935,12 +946,6 @@ void drawFireBlaster() {
     disableTextureIfNeeded();
 }
 
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
-//TODO HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE
 //------------------- Draws Kiln ---------------------------
 void drawKiln() {
     bindTextureIfNeeded(brickTex);
@@ -963,28 +968,19 @@ void drawKiln() {
 
 //------------------- Draws Packer ---------------------------
 void drawPacker() {
-    float packerBaseX = 24.f;
-    float packerBaseY = 0.f;
-    float packerBaseZ = -4.f;
-    const float packerWidth  = 8.0f;
-    const float packerHeight = 6.0f;
-    const float packerDepth  = 9.0f;
-    const float doorWidth  = 2.0f;
-    const float doorHeight = 5.5f;
-    float angle = -90.f;
     bindTextureIfNeeded(metalWallTex);
     setCustomColor(0.2f, 0.8f, 0.5f);
     glPushMatrix();
-        glTranslatef(packerBaseX, packerBaseY + packerHeight / 2.0f, packerBaseZ);
-        glRotatef(angle, 0.0f, 1.0f, 0.0f);
-        drawTexturedCube(packerWidth, packerHeight, packerDepth);
+        glTranslatef(PACKER_BASE_X, PACKER_BASE_Y + PACKER_HEIGHT / 2.0f, PACKER_BASE_Z);
+        glRotatef(PACKER_ROTATE_ANGLE, 0.0f, 1.0f, 0.0f);
+        drawTexturedCube(PACKER_WIDTH, PACKER_HEIGHT, PACKER_DEPTH);
     glPopMatrix();
     glPushMatrix();
-        glTranslatef(packerBaseX, packerBaseY, packerBaseZ);
-        glRotatef(angle, 0.0f, 1.0f, 0.0f);
-        glTranslatef(0.0f, packerHeight / 4.0f, packerDepth / 2.0f + 0.01f);
+        glTranslatef(PACKER_BASE_X, PACKER_BASE_Y, PACKER_BASE_Z);
+        glRotatef(PACKER_ROTATE_ANGLE, 0.0f, 1.0f, 0.0f);
+        glTranslatef(0.0f, PACKER_HEIGHT / 4.0f, PACKER_DEPTH / 2.0f + 0.01f);
         setCustomColor(0.2f, 0.2f, 0.2f);
-        glScalef(doorWidth, doorHeight, 0.1f);
+        glScalef(PACKER_DOOR_WIDTH, PACKER_DOOR_HEIGHT, 0.1f);
         glutSolidCube(1.0f);
     glPopMatrix();
     disableTextureIfNeeded();
