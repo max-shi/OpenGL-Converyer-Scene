@@ -10,15 +10,17 @@
 #include <GL/freeglut.h>
 #include "loadTGA.h"
 #include "keyboardUtilities.h"
+
 using namespace std;
+KeyboardUtilities keyboardUtil;
 
 // Variate Globals
 bool isShadowPass = false;
 bool wireframeMode = false;
+bool sparkGeneration = false;
 float fireBlasterTimeSinceLastEmission = 0.0f;
 float beltOffset = 0.0f;
 float beltSpeed = 1.f / 60.f;
-bool sparkGeneration = false;
 float timeSinceLastEmission = 0.0f;
 float emissionRate = 0.001f;
 float rollerRotation = 0.0f;
@@ -160,15 +162,6 @@ const float CONVEYOR_Z_MIN = -5.0f;
 const float CONVEYOR_Z_MAX = -1.0f;
 const float SPACING = BELT_X_LENGTH / NUM_ITEMS;
 
-
-
-
-
-
-
-
-
-
 // Models
 struct Particle {
     float x, y, z;
@@ -192,14 +185,14 @@ const GLfloat MATDIFFUSE[]   = {0.8f, 0.8f, 0.8f, 1.0f};
 const GLfloat MATSPECULAR[]  = {1.0f, 1.0f, 1.0f, 1.0f};
 const GLfloat MATSHININESS[] = {50.0f};
 
-// Floor Texure ID
-GLuint floorTex;
-GLuint beltTex;
-GLuint metalTex;
-GLuint metalPlateTex;
-GLuint brickTex;
-GLuint metalWallTex;
-GLuint skyboxTex[6];
+// Texturte IDs
+GLuint FLOOR_TEX;
+GLuint BELT_TEX;
+GLuint METAL_TEX;
+GLuint METAL_PLATE_TEX;
+GLuint BRICK_TEX;
+GLuint METAL_WALL_TEX;
+GLuint SKYBOX_TEX[6];
 
 void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
     if(isShadowPass)
@@ -244,8 +237,6 @@ void disableTextureIfNeeded() {
         glDisable(GL_TEXTURE_2D);
     }
 }
-
-KeyboardUtilities keyboardUtil;
 
 //------------------- Initialize Particle System ----------------------
 void initParticleSystem() {
@@ -462,7 +453,7 @@ void drawRoller(float xPos) {
         glTranslatef(xPos, ROLLER_Y_CENTER, ROLLER_Z_CENTER);
         glTranslatef(0.0f, 0.0f, -ROLLER_LENGTH / 2.0f);
         glRotatef(rollerRotation, 0.0f, 0.0f, -1.0f);
-        bindTextureIfNeeded(floorTex);
+        bindTextureIfNeeded(FLOOR_TEX);
         setCustomColor(0.7f, 0.7f, 0.7f);
         GLUquadric* quad = gluNewQuadric();
         gluQuadricTexture(quad, GL_TRUE);
@@ -492,7 +483,7 @@ void drawRollers() {
 
 //------------------- Draw the Overhead Bar and Supports ---------------------------
 void drawSpringBars(float zPosition) {
-    bindTextureIfNeeded(metalTex);
+    bindTextureIfNeeded(METAL_TEX);
     setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
         glTranslatef(SPRINGBAR_X_LOCATION, SPRINGBAR_TOP_Y, zPosition);
@@ -511,7 +502,7 @@ void drawSpringBars(float zPosition) {
 //------------------- Draw a Single Spring ---------------------------
 void drawSpring(float x, float z, float timeOffset, float maxHeight, float minHeight) {
     float currentHeight = (minHeight + (maxHeight - minHeight) * (0.5f + 0.5f * sin(beltOffset * 3.0f + timeOffset))) * 2;
-    bindTextureIfNeeded(metalTex);
+    bindTextureIfNeeded(METAL_TEX);
     glPushMatrix();
         glTranslatef(x, 0.0f, z);
         GLUquadric* quad = gluNewQuadric();
@@ -561,7 +552,7 @@ void drawBackgroundSprings() {
 }
 
 void drawConveyorBelt() {
-    bindTextureIfNeeded(beltTex);
+    bindTextureIfNeeded(BELT_TEX);
     setCustomColor(0.9f, 0.9f, 0.9f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f - NORMALIZED_OFFSET, 0.0f); glVertex3f(CONVEYOR_X_LEFT, CONVEYOR_Y_BASE + ROLLER_RADIUS, BELT_Z_MIN);
@@ -705,7 +696,7 @@ void drawProcessedItem(float offset) {
 }
 
 void drawSupportStructure() {
-    bindTextureIfNeeded(metalPlateTex);
+    bindTextureIfNeeded(METAL_PLATE_TEX);
     setCustomColor(1.f, 1.f, 1.f);
     glPushMatrix();
         glTranslatef(SUPPORT_X_LEFT + SUPPORT_LEG_WIDTH/2, SUPPORT_Y_BOTTOM + (yTop-SUPPORT_Y_BOTTOM)/2, zFront - SUPPORT_LEG_WIDTH/2);
@@ -787,7 +778,7 @@ void drawSupportStructure() {
 void drawPressDevice() {
     float pressCycle = fmod(beltOffset * (2.0f * M_PI / 5.0f), 2.0f * M_PI);
     float pressPosition = 0.5f * sin(pressCycle + 0.6);
-    bindTextureIfNeeded(metalTex);
+    bindTextureIfNeeded(METAL_TEX);
     setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
         glTranslatef(PRESSER_BASE_X, PRESSER_BASE_Y + PRESSER_BASE_HEIGHT/2, PRESSER_BASE_Z);
@@ -833,7 +824,7 @@ void drawPressDevice() {
 
 //------------------- Draw Silo ---------------------------
 void drawSilo(float x, float z) {
-    bindTextureIfNeeded(metalPlateTex);
+    bindTextureIfNeeded(METAL_PLATE_TEX);
     setCustomColor(0.85f, 0.85f, 0.85f);
     glPushMatrix();
         glTranslatef(x, 0.0f, z);
@@ -850,7 +841,7 @@ void drawSilo(float x, float z) {
     disableTextureIfNeeded();
     setCustomColor(0.6f, 0.6f, 0.6f);
     glPushMatrix();
-        bindTextureIfNeeded(metalPlateTex);
+        bindTextureIfNeeded(METAL_PLATE_TEX);
         glTranslatef(x, SILO_HEIGHT + ROOF_HEIGHT - 0.5f, z);
         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
         {
@@ -882,7 +873,7 @@ void drawSilos() {
 
 //------------------- Draw Upgrader ---------------------------
 void drawUpgrader(float upgraderX) {
-    bindTextureIfNeeded(floorTex);
+    bindTextureIfNeeded(FLOOR_TEX);
     setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
         glTranslatef(upgraderX, UPGRADER_BASE_Y + UPGRADER_BASE_HEIGHT/2, UPGRADER_BASE_Z);
@@ -918,7 +909,7 @@ void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float of
 //------------------- Draw Fire Blaster ---------------------------
 void drawFireBlaster() {
     // Draw the left crane arm
-    bindTextureIfNeeded(metalTex);
+    bindTextureIfNeeded(METAL_TEX);
     setCustomColor(0.7f, 0.7f, 0.7f);
     glPushMatrix();
     glTranslatef(-10.f, FIREBLASETER_CRANE_HEIGHT/2, 0.f);
@@ -948,7 +939,7 @@ void drawFireBlaster() {
 
 //------------------- Draws Kiln ---------------------------
 void drawKiln() {
-    bindTextureIfNeeded(brickTex);
+    bindTextureIfNeeded(BRICK_TEX);
     setCustomColor(0.8f, 0.3f, 0.3f);
     glPushMatrix();
         glTranslatef(KILN_BASE_X, KILN_BASE_Y + KILN_HEIGHT / 2.0f, KILN_BASE_Z);
@@ -968,7 +959,7 @@ void drawKiln() {
 
 //------------------- Draws Packer ---------------------------
 void drawPacker() {
-    bindTextureIfNeeded(metalWallTex);
+    bindTextureIfNeeded(METAL_WALL_TEX);
     setCustomColor(0.2f, 0.8f, 0.5f);
     glPushMatrix();
         glTranslatef(PACKER_BASE_X, PACKER_BASE_Y + PACKER_HEIGHT / 2.0f, PACKER_BASE_Z);
@@ -988,82 +979,82 @@ void drawPacker() {
 
 //------------------- Loads Textures ---------------------------
 void loadTextures() {
-    glGenTextures(1, &floorTex);
-    glBindTexture(GL_TEXTURE_2D, floorTex);
+    glGenTextures(1, &FLOOR_TEX);
+    glBindTexture(GL_TEXTURE_2D, FLOOR_TEX);
     loadTGA("concrete.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(1, &beltTex);
-    glBindTexture(GL_TEXTURE_2D, beltTex);
+    glGenTextures(1, &BELT_TEX);
+    glBindTexture(GL_TEXTURE_2D, BELT_TEX);
     loadTGA("concrete.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(1, &metalTex);
-    glBindTexture(GL_TEXTURE_2D, metalTex);
+    glGenTextures(1, &METAL_TEX);
+    glBindTexture(GL_TEXTURE_2D, METAL_TEX);
     loadTGA("metal.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(1, &metalPlateTex);
-    glBindTexture(GL_TEXTURE_2D, metalPlateTex);
+    glGenTextures(1, &METAL_PLATE_TEX);
+    glBindTexture(GL_TEXTURE_2D, METAL_PLATE_TEX);
     loadTGA("metalPlate.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(1, &brickTex);
-    glBindTexture(GL_TEXTURE_2D, brickTex);
+    glGenTextures(1, &BRICK_TEX);
+    glBindTexture(GL_TEXTURE_2D, BRICK_TEX);
     loadTGA("brick.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(1, &metalWallTex);
-    glBindTexture(GL_TEXTURE_2D, metalWallTex);
+    glGenTextures(1, &METAL_WALL_TEX);
+    glBindTexture(GL_TEXTURE_2D, METAL_WALL_TEX);
     loadTGA("metalWall.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glGenTextures(6, skyboxTex);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[0]);
+    glGenTextures(6, SKYBOX_TEX);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[0]);
     loadTGA("negx.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[1]);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[1]);
     loadTGA("negy.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[2]);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[2]);
     loadTGA("negz.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[3]);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[3]);
     loadTGA("posx.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[4]);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[4]);
     loadTGA("posy.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, skyboxTex[5]);
+    glBindTexture(GL_TEXTURE_2D, SKYBOX_TEX[5]);
     loadTGA("posz.tga");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1076,7 +1067,7 @@ void drawSkybox() {
     float size = 500.0f;
     float halfSize = size / 2.0f;
     glEnable(GL_TEXTURE_2D);
-    bindTextureIfNeeded(skyboxTex[0]);
+    bindTextureIfNeeded(SKYBOX_TEX[0]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
@@ -1084,7 +1075,7 @@ void drawSkybox() {
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
     glEnd();
     disableTextureIfNeeded();
-    bindTextureIfNeeded(skyboxTex[1]);
+    bindTextureIfNeeded(SKYBOX_TEX[1]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
@@ -1092,7 +1083,7 @@ void drawSkybox() {
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
     glEnd();
     disableTextureIfNeeded();
-    bindTextureIfNeeded(skyboxTex[2]);
+    bindTextureIfNeeded(SKYBOX_TEX[2]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-halfSize, -halfSize, -halfSize);
@@ -1100,7 +1091,7 @@ void drawSkybox() {
         glTexCoord2f(0.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
     disableTextureIfNeeded();
-    bindTextureIfNeeded(skyboxTex[3]);
+    bindTextureIfNeeded(SKYBOX_TEX[3]);
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, -halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
@@ -1108,7 +1099,7 @@ void drawSkybox() {
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
     disableTextureIfNeeded();
-    bindTextureIfNeeded(skyboxTex[4]);
+    bindTextureIfNeeded(SKYBOX_TEX[4]);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-halfSize, halfSize, -halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, halfSize, halfSize);
@@ -1116,7 +1107,7 @@ void drawSkybox() {
         glTexCoord2f(1.0f, 0.0f); glVertex3f(halfSize, halfSize, -halfSize);
     glEnd();
     disableTextureIfNeeded();
-    bindTextureIfNeeded(skyboxTex[5]);
+    bindTextureIfNeeded(SKYBOX_TEX[5]);
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(halfSize, -halfSize, halfSize);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-halfSize, -halfSize, halfSize);
@@ -1128,7 +1119,7 @@ void drawSkybox() {
 
 //------------------- Draw Textured Floor ---------------------------
 void drawTexturedFloor() {
-    bindTextureIfNeeded(floorTex);
+    bindTextureIfNeeded(FLOOR_TEX);
     setCustomColor(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-50.0f, 0.0f, -50.0f);
