@@ -23,6 +23,7 @@ GLfloat matSpecular[]  = {1.0f, 1.0f, 1.0f, 1.0f};
 GLfloat matShininess[] = {50.0f};
 
 bool isShadowPass = false;
+bool wireframeMode = false;
 void setCustomColor(GLfloat r, GLfloat g, GLfloat b) {
     if(isShadowPass)
         glColor3f(0.1f, 0.1f, 0.1f);
@@ -1124,6 +1125,11 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    if (wireframeMode) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
     float radYaw = keyboardUtil.getYaw() * M_PI / 180.0f;
     float radPitch = keyboardUtil.getPitch() * M_PI / 180.0f;
     float lookDirX = cos(radPitch) * sin(radYaw);
@@ -1143,10 +1149,14 @@ void display() {
         drawSkybox();
         glDepthMask(GL_TRUE);
     glPopMatrix();
-    glLightfv(GL_LIGHT0, GL_POSITION, globalLightPosition);
+    if (!wireframeMode) {
+        glLightfv(GL_LIGHT0, GL_POSITION, globalLightPosition);
+    }
     glDisable(GL_LIGHTING);
     drawTexturedFloor();
-    glEnable(GL_LIGHTING);
+    if (!wireframeMode) {
+        glEnable(GL_LIGHTING);
+    }
     drawSupportStructure();
     drawRollers();
     drawPressDevice();
@@ -1215,6 +1225,10 @@ void keyboardDownCallback(unsigned char key, int x, int y) {
     }
     else if (key == 'r' || key == 'R') {
         beltSpeed = -beltSpeed;
+    }
+    else if (key == 'q' || key == 'Q') {
+        wireframeMode = !wireframeMode;
+        glutPostRedisplay();
     }
     else if (key == 27) exit(0);
 }
