@@ -1395,7 +1395,6 @@ void display() {
     if (!wireframeMode) {
         glLightfv(GL_LIGHT0, GL_POSITION, GLOBAL_LIGHT_POSITION);
     }
-    glDisable(GL_LIGHTING);
     drawTexturedFloor();
     drawSupportStructure();
     drawRollers();
