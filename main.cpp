@@ -73,6 +73,13 @@ GLuint metalTex;
 GLuint metalPlateTex;
 GLuint brickTex;
 GLuint metalWallTex;
+// Fire blaster variables
+bool fireBlasterActive = true;  // Always active
+float fireBlasterX = -10.0f;    // X position
+float fireBlasterMinX = -15.0f; // Left extent
+float fireBlasterMaxX = -5.0f;  // Right extent
+float fireBlasterEmissionRate = 0.0005f; // Emission rate
+float fireBlasterTimeSinceLastEmission = 0.0f;
 
 GLuint skyboxTex[6];
 
@@ -90,7 +97,7 @@ float rollerRotation = 0.0f;
 
 KeyboardUtilities keyboardUtil;
 
-const int MAX_PARTICLES = 500;
+const int MAX_PARTICLES = 2000;
 const float PARTICLE_LIFETIME = 1.5f;
 const float SPARK_GRAVITY = -9.8f;
 const float FLOOR_Y = 0.0f;
@@ -120,7 +127,7 @@ void initParticleSystem() {
 
 //------------------- Create New Particle ----------------------------
 void createParticle(float originX, float originY, float originZ) {
-    for (int i = 0; i < MAX_PARTICLES; i++) {
+    for (int i = 0; i < MAX_PARTICLES/4; i++) {
         if (!particles[i].active) {
             particles[i].x = originX;
             particles[i].y = originY;
@@ -142,27 +149,77 @@ void createParticle(float originX, float originY, float originZ) {
     }
 }
 
+//------------------- Create New Fire Particle ----------------------------
+void createFireParticle(float originX, float originY, float originZ) {
+    for (int i = 0; i < MAX_PARTICLES; i++) {
+        if (!particles[i].active) {
+            particles[i].x = originX;
+            particles[i].y = originY;
+            particles[i].z = originZ;
+            // More vertical movement with slight horizontal spread
+            float angle = (float)(rand() % 180 - 90) * M_PI / 180.0f;
+            float speed = 0.5f + (float)(rand() % 200) / 100.0f;
+            particles[i].vx = speed * cos(angle) * 0.5f;
+            particles[i].vz = speed * sin(angle) * 0.5f;
+            particles[i].vy = 1.0f + (float)(rand() % 200) / 100.0f;
+            // More orange-red colors
+            particles[i].r = 0.9f + (float)(rand() % 10) / 100.0f;
+            particles[i].g = 0.3f + (float)(rand() % 40) / 100.0f;
+            particles[i].b = (float)(rand() % 15) / 100.0f;
+            particles[i].maxLifetime = PARTICLE_LIFETIME * (0.3f + (float)(rand() % 70) / 100.0f);
+            particles[i].lifetime = particles[i].maxLifetime;
+            particles[i].scale = 0.07f + (float)(rand() % 15) / 100.0f;
+            particles[i].active = true;
+            return;
+        }
+    }
+}
+
+
 //------------------- Update Particles ------------------------------
 void updateParticles(float deltaTime) {
+    const float DEFAULT_FLOOR_Y = 0.0f;
+    const float CONVEYOR_FLOOR_Y = 2.0f;
+    const float CONVEYOR_X_MIN = -20.0f;
+    const float CONVEYOR_X_MAX = 20.0f;
+    const float CONVEYOR_Z_MIN = -5.0f;
+    const float CONVEYOR_Z_MAX = -1.0f;
+
     for (int i = 0; i < MAX_PARTICLES; i++) {
         if (particles[i].active) {
+            // Update position
             particles[i].x += particles[i].vx * deltaTime;
             particles[i].y += particles[i].vy * deltaTime;
             particles[i].z += particles[i].vz * deltaTime;
             particles[i].vy += SPARK_GRAVITY * deltaTime;
-            if (particles[i].y <= FLOOR_Y && particles[i].vy < 0) {
-                particles[i].y = FLOOR_Y;
+
+            // Determine which floor to use based on particle position
+            float currentFloorY = DEFAULT_FLOOR_Y;
+
+            // Check if particle is above the conveyor belt
+            if (particles[i].x >= CONVEYOR_X_MIN && particles[i].x <= CONVEYOR_X_MAX &&
+                particles[i].z >= CONVEYOR_Z_MIN && particles[i].z <= CONVEYOR_Z_MAX) {
+                currentFloorY = CONVEYOR_FLOOR_Y;
+            }
+
+            // Handle collision with the current floor
+            if (particles[i].y <= currentFloorY && particles[i].vy < 0) {
+                particles[i].y = currentFloorY;
                 particles[i].vy = -particles[i].vy * BOUNCE_DAMPING;
                 particles[i].vx *= 0.9f;
                 particles[i].vz *= 0.9f;
                 if (fabs(particles[i].vy) < 0.5f)
                     particles[i].vy = 0;
             }
-            particles[i].lifetime -= deltaTime;
+
+            // Update lifetime
+            particles[i].lifetime -= deltaTime * 0.75;
             if (particles[i].lifetime <= 0)
                 particles[i].active = false;
         }
     }
+
+    // Original spark generation
     if (sparkGeneration) {
         timeSinceLastEmission += deltaTime;
         while (timeSinceLastEmission >= emissionRate) {
@@ -170,7 +227,24 @@ void updateParticles(float deltaTime) {
             timeSinceLastEmission -= emissionRate;
         }
     }
+
+    // Fire blaster generation
+    if (fireBlasterActive) {
+        fireBlasterTimeSinceLastEmission += deltaTime;
+        while (fireBlasterTimeSinceLastEmission >= fireBlasterEmissionRate) {
+            // Random x position within the fire blaster range
+            float randomX = fireBlasterMinX + (float)(rand() % 100) / 100.0f * (fireBlasterMaxX - fireBlasterMinX);
+            // Create fire particle from the blaster position
+            createFireParticle(
+                randomX,
+                8.0f, // Height position (just below the beam)
+                (beltZMin + beltZMax) / 2.0f
+            );
+            fireBlasterTimeSinceLastEmission -= fireBlasterEmissionRate;
+        }
+    }
 }
+
 
 //------------------- Draw Particles --------------------------------
 void drawParticles() {
@@ -742,6 +816,48 @@ void drawUpgraderBeam(float upgraderX, GLfloat a, GLfloat b, GLfloat c, float of
     glEnable(GL_LIGHTING);
     glDisable(GL_BLEND);
 }
+// bool fireBlasterActive = true;  // Always active
+// float fireBlasterX = -10.0f;    // X position
+// float fireBlasterMinX = -15.0f; // Left extent
+// float fireBlasterMaxX = -5.0f;  // Right extent
+// float fireBlasterEmissionRate = 0.0005f; // Emission rate
+// float fireBlasterTimeSinceLastEmission = 0.0f;
+
+//------------------- Draw Fire Blaster ---------------------------
+void drawFireBlaster() {
+    float craneHeight = 10.0f;
+    float armWidth = 2.f;
+    float baseWidth = 1.0f;
+
+    // Draw the left crane arm
+    bindTextureIfNeeded(metalTex);
+    setCustomColor(0.7f, 0.7f, 0.7f);
+    glPushMatrix();
+    glTranslatef(-10.f, craneHeight/2, 0.f);
+    drawTexturedCube(armWidth, craneHeight, armWidth);
+    glPopMatrix();
+
+    // Draw the right crane arm
+    glPushMatrix();
+    glTranslatef(-10.f, craneHeight/2, -8.f);
+    drawTexturedCube(armWidth, craneHeight, armWidth);
+    glPopMatrix();
+
+    // Draw the connecting beam across the top
+    glPushMatrix();
+    glTranslatef(fireBlasterX, craneHeight, (beltZMin + beltZMax)/2);
+    glRotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+    drawTexturedCube(fireBlasterMaxX - fireBlasterMinX, armWidth, armWidth);
+    glPopMatrix();
+
+    // Draw the central fire blaster unit
+    glPushMatrix();
+    glTranslatef(fireBlasterX, craneHeight - 1.0f, (beltZMin + beltZMax)/2);
+    drawTexturedCube(fireBlasterMaxX - fireBlasterMinX, 1.5f, baseWidth);
+    glPopMatrix();
+    disableTextureIfNeeded();
+}
+
 
 //------------------- Draws Kiln ---------------------------
 void drawKiln() {
@@ -995,6 +1111,7 @@ void display() {
         float itemOffset = fmod(beltOffset + i * spacing, beltXLength);
         drawProcessedItem(itemOffset);
     }
+    drawFireBlaster();
     drawParticles();
     drawUpgrader(3.0f);
     drawUpgraderBeam(3.0f, 0.2, 0.8, 1.0, 0);
