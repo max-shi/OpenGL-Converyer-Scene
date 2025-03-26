@@ -516,14 +516,83 @@ void drawProcessedItem(float offset) {
         float worldX = -20.0f + offset;
         glTranslatef(worldX, 2.5f + rollerRadius, (beltZMin + beltZMax) / 2.0f);
         if (worldX < 0.0f) {
-            float scaleFactor;
-            if (worldX <= -3.0f)
-                scaleFactor = 1.0f - 0.25f * ((worldX + 20.0f) / 17.0f);
-            else
-                scaleFactor = 0.75f;
+            // This is our transformation zone (x = -20 to x = 0)
+            // Calculate progress along the transformation (0.0 to 1.0)
+            float progress = (worldX + 20.0f) / 20.0f;
+
+            // Scale the cube - decreasing in size as it moves
+            float scaleFactor = 1.0f - 0.25f * progress;
             glScalef(scaleFactor, scaleFactor, scaleFactor);
-            setCustomColor(0.0f, 0.0f, 1.0f);
-            drawTexturedCube(1.0f, 1.0f, 1.0f);
+
+            // Color transition from bright orange to yellow
+            float r = 1.0f;                       // Red stays at 1.0
+            float g = 0.1f + (0.5f * progress);   // Green increases from 0.3 to 1.0
+            float b = 0.0f;                       // Blue stays at 0.0
+
+            setCustomColor(r, g, b);
+
+            // Draw the ingot shape instead of a cube
+            float ingotWidth = 1.0f;
+            float ingotHeight = 0.5f;
+            float ingotDepth = 0.7f;
+
+            // Add emissive lighting that decreases with progress
+            if (!isShadowPass) {
+                float emissiveStrength = 1.0f - (0.8f * progress); // Decreases as progress increases
+                GLfloat emissiveColor[] = {r * emissiveStrength, g * emissiveStrength, 0.0f, 1.0f};
+                glMaterialfv(GL_FRONT, GL_EMISSION, emissiveColor);
+            }
+
+            // Draw the ingot (trapezoidal prism with flat top/bottom)
+            glBegin(GL_QUADS);
+                // Bottom face
+                glNormal3f(0.0f, -1.0f, 0.0f);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+
+                // Top face
+                glNormal3f(0.0f, 1.0f, 0.0f);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+
+                // Front face
+                glNormal3f(0.0f, 0.0f, 1.0f);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+
+                // Back face
+                glNormal3f(0.0f, 0.0f, -1.0f);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+
+                // Left face
+                glNormal3f(-1.0f, 0.0f, 0.0f);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+                glVertex3f(-ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+                glVertex3f(-ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+
+                // Right face
+                glNormal3f(1.0f, 0.0f, 0.0f);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, -ingotDepth/2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, -ingotDepth/2.2);
+                glVertex3f(ingotWidth/2.2, ingotHeight/2, ingotDepth/2.2);
+                glVertex3f(ingotWidth/2, -ingotHeight/2, ingotDepth/2);
+            glEnd();
+
+            // Reset emission if we enabled it
+            if (!isShadowPass) {
+                GLfloat noEmission[] = {0.0f, 0.0f, 0.0f, 1.0f};
+                glMaterialfv(GL_FRONT, GL_EMISSION, noEmission);
+            }
         } else {
             glTranslatef(0.0f, -rollerRadius, 0.0f);
             float growth = (worldX < 9.0f) ? (worldX / 9.0f) : 1.0f;
