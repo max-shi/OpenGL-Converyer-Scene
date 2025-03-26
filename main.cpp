@@ -27,7 +27,7 @@ float rollerRotation = 0.0f;
 const GLfloat GLOBAL_LIGHT_AMBIENT[]  = {0.2f, 0.2f, 0.2f, 1.0f};
 const GLfloat GLOBAL_LIGHT_DIFFUSE[]  = {0.8f, 0.8f, 0.8f, 1.0f};
 const GLfloat GLOBAL_LIGHT_SPECULAR[] = {1.0f, 1.0f, 1.0f, 1.0f};
-const GLfloat GLOBAL_LIGHT_POSITION[] = {0.0f, 30.0f, 50.0f, 1.0f};
+GLfloat GLOBAL_LIGHT_POSITION[4] = {0.0f, 30.0f, 50.0f, 1.0f};
 
 const GLfloat MATAMBIENT[]   = {0.2f, 0.2f, 0.2f, 1.0f};
 const GLfloat MATDIFFUSE[]   = {0.8f, 0.8f, 0.8f, 1.0f};
