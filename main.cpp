@@ -9,10 +9,15 @@
 #include <vector>
 #include <GL/freeglut.h>
 #include "loadTGA.h"
-#include "keyboardUtilities.h"
-
 using namespace std;
-KeyboardUtilities keyboardUtil;
+
+// Position and Camera Globals
+float posX = 0.0f, posY = 5.0f, posZ = 30.0f;
+float yaw = 0.0f, pitch = 0.0f;
+const float MOVE_SPEED = 0.5f;
+const float CAMERA_SPEED = 1.0f;
+bool keys[256] = {false};
+bool specialKeys[256] = {false};
 
 // Variate Globals
 bool isShadowPass = false;
@@ -193,6 +198,43 @@ GLuint METAL_PLATE_TEX;
 GLuint BRICK_TEX;
 GLuint METAL_WALL_TEX;
 GLuint SKYBOX_TEX[6];
+
+// Function to handle movement based on pressed keys
+void processMovement() {
+    float radYaw = yaw * M_PI / 180.0f;
+    float moveX = 0.0f, moveZ = 0.0f;
+
+    if (keys['w'] || keys['W']) {
+        moveX += sin(radYaw) * MOVE_SPEED;
+        moveZ -= cos(radYaw) * MOVE_SPEED;
+    }
+    if (keys['s'] || keys['S']) {
+        moveX -= sin(radYaw) * MOVE_SPEED;
+        moveZ += cos(radYaw) * MOVE_SPEED;
+    }
+    if (keys['a'] || keys['A']) {
+        moveX -= cos(radYaw) * MOVE_SPEED;
+        moveZ -= sin(radYaw) * MOVE_SPEED;
+    }
+    if (keys['d'] || keys['D']) {
+        moveX += cos(radYaw) * MOVE_SPEED;
+        moveZ += sin(radYaw) * MOVE_SPEED;
+    }
+
+    posX += moveX;
+    posZ += moveZ;
+
+    // Process camera rotation with arrow keys
+    if (specialKeys[GLUT_KEY_LEFT]) yaw -= CAMERA_SPEED;
+    if (specialKeys[GLUT_KEY_RIGHT]) yaw += CAMERA_SPEED;
+    if (specialKeys[GLUT_KEY_UP]) pitch += CAMERA_SPEED;
+    if (specialKeys[GLUT_KEY_DOWN]) pitch -= CAMERA_SPEED;
+
+    // Limit pitch to avoid flipping
+    if (pitch > 89.0f) pitch = 89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
+}
+
 
 /**
  * @brief Sets the drawing color based on shadow pass state.
@@ -529,11 +571,14 @@ void updateScene(int value) {
     float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float deltaTime = currentTime - lastTime;
     lastTime = currentTime;
+
     beltOffset += beltSpeed;
     if (beltOffset > BELT_X_LENGTH)
         beltOffset = fmod(beltOffset, BELT_X_LENGTH);
     rollerRotation += beltSpeed * 180.0f / (M_PI * ROLLER_RADIUS);
-    keyboardUtil.update();
+
+    processMovement(); // Process keyboard input for movement and camera
+
     displayParticleCheck();
     updateParticles(deltaTime);
     glutPostRedisplay();
@@ -1368,15 +1413,17 @@ void display() {
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-    float radYaw = keyboardUtil.getYaw() * M_PI / 180.0f;
-    float radPitch = keyboardUtil.getPitch() * M_PI / 180.0f;
+
+    float radYaw = yaw * M_PI / 180.0f;
+    float radPitch = pitch * M_PI / 180.0f;
     float lookDirX = cos(radPitch) * sin(radYaw);
     float lookDirY = sin(radPitch);
     float lookDirZ = -cos(radPitch) * cos(radYaw);
-    gluLookAt(keyboardUtil.getPosX(), keyboardUtil.getPosY(), keyboardUtil.getPosZ(),
-              keyboardUtil.getPosX() + lookDirX,
-              keyboardUtil.getPosY() + lookDirY,
-              keyboardUtil.getPosZ() + lookDirZ,
+
+    gluLookAt(posX, posY, posZ,
+              posX + lookDirX,
+              posY + lookDirY,
+              posZ + lookDirZ,
               0.0, 1.0, 0.0);
     glPushMatrix();
         float m[16];
@@ -1462,7 +1509,7 @@ void display() {
  * @param y The y-coordinate of the mouse when the key was pressed.
  */
 void keyboardDownCallback(unsigned char key, int x, int y) {
-    keyboardUtil.keyboardDown(key);
+    keys[key] = true;
     if (key == '+' || key == '=') {
         beltSpeed += 0.005f;
         if (beltSpeed > 0.1f) beltSpeed = 0.1f;
@@ -1491,7 +1538,7 @@ void keyboardDownCallback(unsigned char key, int x, int y) {
  * @param y The y-coordinate of the mouse when the key was released.
  */
 void keyboardUpCallback(unsigned char key, int x, int y) {
-    keyboardUtil.keyboardUp(key);
+    keys[key] = false;
 }
 
 /**
@@ -1504,7 +1551,7 @@ void keyboardUpCallback(unsigned char key, int x, int y) {
  * @param y The y-coordinate of the mouse when the key was pressed.
  */
 void specialKeyDownCallback(int key, int x, int y) {
-    keyboardUtil.specialKeyDown(key);
+    specialKeys[key] = true;
 }
 
 /**
@@ -1517,7 +1564,7 @@ void specialKeyDownCallback(int key, int x, int y) {
  * @param y The y-coordinate of the mouse when the key was released.
  */
 void specialKeyUpCallback(int key, int x, int y) {
-    keyboardUtil.specialKeyUp(key);
+    specialKeys[key] = false;
 }
 
 /**
