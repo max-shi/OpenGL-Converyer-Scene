@@ -11,15 +11,11 @@
 #include "loadTGA.h"
 using namespace std;
 
-// Position and Camera Globals
+// Variate Globals
 float posX = 0.0f, posY = 5.0f, posZ = 30.0f;
 float yaw = 0.0f, pitch = 0.0f;
-const float MOVE_SPEED = 0.5f;
-const float CAMERA_SPEED = 1.0f;
 bool keys[256] = {false};
 bool specialKeys[256] = {false};
-
-// Variate Globals
 bool isShadowPass = false;
 bool wireframeMode = false;
 bool sparkGeneration = false;
@@ -32,6 +28,10 @@ float rollerRotation = 0.0f;
 
 // Amount of Items
 int NUM_ITEMS = 8;
+
+// Camera and Movement globals
+const float MOVE_SPEED = 0.35f;
+const float CAMERA_SPEED = 1.0f;
 
 // Fire blaster variables
 const bool FIREBLASTER_ACTIVE = true;
@@ -199,7 +199,18 @@ GLuint BRICK_TEX;
 GLuint METAL_WALL_TEX;
 GLuint SKYBOX_TEX[6];
 
-// Function to handle movement based on pressed keys
+/**
+ * @brief Processes camera and movement input from keyboard.
+ *
+ * Calculates movement vectors based on the current yaw angle and key states.
+ * When W/S keys are pressed, moves forward/backward relative to camera direction.
+ * When A/D keys are pressed, strafes left/right relative to camera direction.
+ * Also handles camera rotation using the arrow keys, with pitch constrained
+ * to prevent camera flipping.
+ *
+ * Movement uses the global MOVE_SPEED constant, while camera rotation uses
+ * the CAMERA_SPEED constant. Pitch is restricted to the range [-89°, 89°].
+ */
 void processMovement() {
     float radYaw = yaw * M_PI / 180.0f;
     float moveX = 0.0f, moveZ = 0.0f;

@@ -4,8 +4,7 @@ project(Assignment)
 
 add_executable(main.out main.cpp
         loadTGA.h
-        keyboardUtilities.cpp
-        keyboardUtilities.h)
+)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL REQUIRED)
