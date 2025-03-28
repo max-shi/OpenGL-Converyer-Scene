@@ -1476,39 +1476,43 @@ void display() {
     drawUpgraderBeam(4.0f, 0.8, 0.8, 0.2, 0.9);
     drawUpgrader(5.0f);
     drawUpgraderBeam(5.0f, 0.8, 0.2, 0.8, -1.0);
-    GLfloat groundPlane[4] = {0.0f, 1.0f, 0.0f, 0.0f};
-    GLfloat shadowMat[4][4];
-    computeShadowMatrix(shadowMat, groundPlane, GLOBAL_LIGHT_POSITION);
-    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT);
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-2.0f, -2.0f);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-    glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-    glPushMatrix();
-        glMultMatrixf((GLfloat *)shadowMat);
-        isShadowPass = true;
-        drawSupportStructure();
-        drawRollers();
-        drawPressDevice();
-        drawBackgroundSprings();
-        drawConveyorBelt();
-        drawSilos();
-        drawKiln();
-        drawPacker();
-        drawUpgrader(3.0f);
-        drawUpgrader(4.0f);
-        drawUpgrader(5.0f);
-        for (int i = 0; i < NUM_ITEMS; i++) {
-            float itemOffset = fmod(beltOffset + i * spacing, BELT_X_LENGTH);
-            drawProcessedItem(itemOffset);
-        }
-        isShadowPass = false;
 
-    glPopMatrix();
-    glPopAttrib();
+    if (!wireframeMode) {
+        GLfloat groundPlane[4] = {0.0f, 1.0f, 0.0f, 0.0f};
+        GLfloat shadowMat[4][4];
+        computeShadowMatrix(shadowMat, groundPlane, GLOBAL_LIGHT_POSITION);
+        glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(-2.0f, -2.0f);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+        glPushMatrix();
+            glMultMatrixf((GLfloat *)shadowMat);
+            isShadowPass = true;
+            drawSupportStructure();
+            drawRollers();
+            drawPressDevice();
+            drawBackgroundSprings();
+            drawConveyorBelt();
+            drawSilos();
+            drawKiln();
+            drawPacker();
+            drawUpgrader(3.0f);
+            drawUpgrader(4.0f);
+            drawUpgrader(5.0f);
+            for (int i = 0; i < NUM_ITEMS; i++) {
+                float itemOffset = fmod(beltOffset + i * spacing, BELT_X_LENGTH);
+                drawProcessedItem(itemOffset);
+            }
+            isShadowPass = false;
+        glPopMatrix();
+        glPopAttrib();
+    }
+
     glutSwapBuffers();
 }
+
 
 /**
  * @brief Keyboard callback for key press events.
